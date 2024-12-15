@@ -1,78 +1,8 @@
 import React, { useRef, useEffect } from 'react';
-import * as monaco from 'monaco-editor';
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Box } from '@mui/material';
-
-// Define CodeFr language
-monaco.languages.register({ id: 'codefr' });
-
-// Define syntax highlighting rules for CodeFr
-monaco.languages.setMonarchTokensProvider('codefr', {
-  tokenizer: {
-    root: [
-      // Keywords
-      [/\b(si|sinon|pour|tant que|fonction|retourner|vrai|faux|nul)\b/, 'keyword'],
-      
-      // Types
-      [/\b(entier|reel|chaine|booleen|tableau)\b/, 'type'],
-      
-      // Numbers
-      [/\b\d+(\.\d+)?\b/, 'number'],
-      
-      // Strings
-      [/"[^"]*"/, 'string'],
-      [/'[^']*'/, 'string'],
-      
-      // Comments
-      [/\/\/.*$/, 'comment'],
-      [/\/\*/, 'comment', '@comment'],
-      
-      // Operators
-      [/[+\-*/<>=!&|^~]/, 'operator'],
-      
-      // Identifiers
-      [/[a-zA-Z_]\w*/, 'identifier'],
-      
-      // Brackets
-      [/[{}()\[\]]/, '@brackets'],
-      
-      // Whitespace
-      [/[ \t\r\n]+/, 'white'],
-    ],
-    comment: [
-      [/[^/*]+/, 'comment'],
-      [/\*\//, 'comment', '@pop'],
-      [/[/*]/, 'comment'],
-    ],
-  },
-});
-
-// Define code completion for CodeFr
-monaco.languages.setLanguageConfiguration('codefr', {
-  comments: {
-    lineComment: '//',
-    blockComment: ['/*', '*/'],
-  },
-  brackets: [
-    ['{', '}'],
-    ['[', ']'],
-    ['(', ')'],
-  ],
-  autoClosingPairs: [
-    { open: '{', close: '}' },
-    { open: '[', close: ']' },
-    { open: '(', close: ')' },
-    { open: '"', close: '"' },
-    { open: "'", close: "'" },
-  ],
-  surroundingPairs: [
-    { open: '{', close: '}' },
-    { open: '[', close: ']' },
-    { open: '(', close: ')' },
-    { open: '"', close: '"' },
-    { open: "'", close: "'" },
-  ],
-});
+import { registerCodeFrLanguage } from './CodeFrLanguage';
 
 const MonacoEditor = ({ value, onChange, readOnly = false }) => {
   const editorRef = useRef(null);
@@ -80,10 +10,18 @@ const MonacoEditor = ({ value, onChange, readOnly = false }) => {
   const { mode } = useTheme();
 
   useEffect(() => {
-    if (containerRef.current) {
+    if (!monaco.languages.getLanguages().some(({ id }) => id === 'codefr')) {
+      registerCodeFrLanguage(monaco);
+    }
+
+    if (containerRef.current && !editorRef.current) {
+      const model = monaco.editor.createModel(
+        value || '// Écrivez votre code CodeFr ici\n',
+        'codefr'
+      );
+
       editorRef.current = monaco.editor.create(containerRef.current, {
-        value: value || '// Écrivez votre code CodeFr ici\n',
-        language: 'codefr',
+        model: model,
         theme: mode === 'dark' ? 'vs-dark' : 'vs',
         minimap: { enabled: true },
         fontSize: 14,
@@ -108,49 +46,29 @@ const MonacoEditor = ({ value, onChange, readOnly = false }) => {
       });
 
       // Handle changes
-      editorRef.current.onDidChangeModelContent(() => {
+      const disposable = editorRef.current.onDidChangeModelContent(() => {
         if (onChange) {
           onChange(editorRef.current.getValue());
         }
       });
 
-      // Add custom CodeFr snippets
-      monaco.languages.registerCompletionItemProvider('codefr', {
-        provideCompletionItems: () => {
-          const suggestions = [
-            {
-              label: 'fonction',
-              kind: monaco.languages.CompletionItemKind.Snippet,
-              insertText: 'fonction ${1:nom}(${2:params}) {\n\t${3}\n}',
-              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: 'Définir une fonction',
-            },
-            {
-              label: 'si',
-              kind: monaco.languages.CompletionItemKind.Snippet,
-              insertText: 'si (${1:condition}) {\n\t${2}\n}',
-              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: 'Condition si',
-            },
-            {
-              label: 'pour',
-              kind: monaco.languages.CompletionItemKind.Snippet,
-              insertText: 'pour (${1:i} de 0 à ${2:n}) {\n\t${3}\n}',
-              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: 'Boucle pour',
-            },
-          ];
-          return { suggestions };
-        },
-      });
+      return () => {
+        disposable.dispose();
+        model.dispose();
+        if (editorRef.current) {
+          editorRef.current.dispose();
+          editorRef.current = null;
+        }
+      };
     }
+  }, []);
 
-    return () => {
-      if (editorRef.current) {
-        editorRef.current.dispose();
-      }
-    };
-  }, [value, readOnly]);
+  // Update value when prop changes
+  useEffect(() => {
+    if (editorRef.current && value !== undefined && value !== editorRef.current.getValue()) {
+      editorRef.current.setValue(value);
+    }
+  }, [value]);
 
   // Update theme when mode changes
   useEffect(() => {

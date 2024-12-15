@@ -24,18 +24,18 @@ import { motion } from 'framer-motion';
 import AnimatedPage from '../components/AnimatedPage';
 import MonacoEditor from '../components/CodeEditor/MonacoEditor';
 
-const DEFAULT_CODE = `// Bienvenue dans l'éditeur CodeFr !
-// Voici un exemple de programme simple :
-
-fonction calculerFactorielle(n) {
-    si (n <= 1) {
-        retourner 1;
-    }
-    retourner n * calculerFactorielle(n - 1);
-}
-
-// Calculer la factorielle de 5
-afficher(calculerFactorielle(5));
+const DEFAULT_CODE = `Algorithme ExempleSimple
+Variable x, y: Entier
+Debut
+    x = 10
+    y = 5
+    
+    Si x > y Alors
+        Ecrire("x est plus grand que y")
+    Sinon
+        Ecrire("y est plus grand ou égal à x")
+    FinSi
+Fin
 `;
 
 const EditorPage = () => {
