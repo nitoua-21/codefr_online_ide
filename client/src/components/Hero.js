@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import InfoIcon from '@mui/icons-material/Info';
+import { Link as RouterLink} from 'react-router-dom';
 
 const Hero = () => {
   const theme = useTheme();
@@ -56,6 +57,8 @@ const Hero = () => {
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, justifyContent: { xs: 'center', md: 'flex-start' } }}>
               <Button
+                component={RouterLink}
+                to="/editor"
                 variant="contained"
                 size="large"
                 startIcon={<PlayArrowIcon />}
