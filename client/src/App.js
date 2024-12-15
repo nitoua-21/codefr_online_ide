@@ -5,6 +5,9 @@ import { AnimatePresence } from 'framer-motion';
 import Navbar from './components/Navbar';
 import HomePage from './pages/HomePage';
 import EditorPage from './pages/EditorPage';
+import ChallengesPage from './pages/ChallengesPage';
+import CommunityPage from './pages/CommunityPage';
+import LearnPage from './pages/LearnPage';
 
 const theme = createTheme({
   palette: {
@@ -44,6 +47,9 @@ const AnimatedRoutes = () => {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<HomePage />} />
         <Route path="/editor" element={<EditorPage />} />
+        <Route path="/challenges" element={<ChallengesPage />} />
+        <Route path="/community" element={<CommunityPage />} />
+        <Route path="/learn" element={<LearnPage />} />
       </Routes>
     </AnimatePresence>
   );
