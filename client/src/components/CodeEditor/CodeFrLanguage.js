@@ -1,4 +1,34 @@
 export const registerCodeFrLanguage = (monaco) => {
+  // Define keywords and tokens
+  const keywords = [
+    'Algorithme', 'Debut', 'Fin',
+    'Variable', 'Variables', 'Constante',
+    'Si', 'Alors', 'SinonSi', 'Sinon', 'FinSi',
+    'TantQue', 'Faire', 'FinTantQue',
+    'Pour', 'De', 'A', 'FinPour',
+    'Lire', 'Ecrire',
+    'Et', 'Ou', 'Non', 'Oux',
+    'Mod', 'Tableau'
+  ];
+
+  const typeKeywords = [
+    'Entier', 'Decimal', 'Chaine', 'Caractere', 'Logique'
+  ];
+
+  const constants = [
+    'Vrai', 'Faux'
+  ];
+
+  const builtins = [
+    'Racine', 'Abs', 'Log', 'Log10', 'Arrondi'
+  ];
+
+  const operators = [
+    '=', '>', '<', '!', '~', '?', ':',
+    '==', '<=', '>=', '!=', '+', '-', '*', '/',
+    '^', 'Mod', 'Et', 'Ou', 'Non', 'Oux'
+  ];
+
   // Register language
   monaco.languages.register({ id: 'codefr' });
 
@@ -8,39 +38,11 @@ export const registerCodeFrLanguage = (monaco) => {
     defaultToken: '',
     tokenPostfix: '.codefr',
 
-    // Program structure keywords
-    keywords: [
-      'Algorithme', 'Debut', 'Fin',
-      'Variable', 'Variables', 'Constante',
-      'Si', 'Alors', 'SinonSi', 'Sinon', 'FinSi',
-      'TantQue', 'Faire', 'FinTantQue',
-      'Pour', 'De', 'A', 'FinPour',
-      'Lire', 'Ecrire',
-      'Et', 'Ou', 'Non', 'Oux',
-      'Mod', 'Tableau'
-    ],
-  
-    // Data types
-    typeKeywords: [
-      'Entier', 'Decimal', 'Chaine', 'Caractere', 'Logique'
-    ],
-
-    // Built-in constants
-    constants: [
-      'Vrai', 'Faux'
-    ],
-
-    // Built-in functions
-    builtins: [
-      'Racine', 'Abs', 'Log', 'Log10', 'Arrondi'
-    ],
-
-    // Operators
-    operators: [
-      '=', '>', '<', '!', '~', '?', ':',
-      '==', '<=', '>=', '!=', '+', '-', '*', '/',
-      '^', 'Mod', 'Et', 'Ou', 'Non', 'Oux'
-    ],
+    keywords,
+    typeKeywords,
+    constants,
+    builtins,
+    operators,
 
     // Symbols
     symbols: /[=><!~?:&|+\-*\/\^%]+/,
@@ -140,7 +142,16 @@ export const registerCodeFrLanguage = (monaco) => {
 
   // Register completions provider
   monaco.languages.registerCompletionItemProvider('codefr', {
-    provideCompletionItems: () => {
+    triggerCharacters: [' ', '\n', ':', '.', '(', '['],
+    provideCompletionItems: (model, position) => {
+      const word = model.getWordUntilPosition(position);
+      const range = {
+        startLineNumber: position.lineNumber,
+        endLineNumber: position.lineNumber,
+        startColumn: word.startColumn,
+        endColumn: word.endColumn
+      };
+
       const suggestions = [
         {
           label: 'Algorithme',
@@ -154,21 +165,24 @@ export const registerCodeFrLanguage = (monaco) => {
             'Fin'
           ].join('\n'),
           insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Structure de base d\'un algorithme'
+          documentation: 'Structure de base d\'un algorithme',
+          range: range
         },
         {
           label: 'Variable',
           kind: monaco.languages.CompletionItemKind.Snippet,
           insertText: 'Variable ${1:nom}: ${2:type}',
           insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Déclaration d\'une variable'
+          documentation: 'Déclaration d\'une variable',
+          range: range
         },
         {
           label: 'Variables',
           kind: monaco.languages.CompletionItemKind.Snippet,
           insertText: 'Variables ${1:nom1}, ${2:nom2}: ${3:type}',
           insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Déclaration de plusieurs variables'
+          documentation: 'Déclaration de plusieurs variables',
+          range: range
         },
         {
           label: 'Si',
@@ -179,7 +193,8 @@ export const registerCodeFrLanguage = (monaco) => {
             'FinSi'
           ].join('\n'),
           insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Structure conditionnelle Si'
+          documentation: 'Structure conditionnelle Si',
+          range: range
         },
         {
           label: 'SiComplet',
@@ -194,7 +209,8 @@ export const registerCodeFrLanguage = (monaco) => {
             'FinSi'
           ].join('\n'),
           insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Structure conditionnelle Si complète'
+          documentation: 'Structure conditionnelle Si complète',
+          range: range
         },
         {
           label: 'Pour',
@@ -205,7 +221,8 @@ export const registerCodeFrLanguage = (monaco) => {
             'FinPour'
           ].join('\n'),
           insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Boucle Pour'
+          documentation: 'Boucle Pour',
+          range: range
         },
         {
           label: 'TantQue',
@@ -216,38 +233,54 @@ export const registerCodeFrLanguage = (monaco) => {
             'FinTantQue'
           ].join('\n'),
           insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Boucle TantQue'
+          documentation: 'Boucle TantQue',
+          range: range
         },
         {
           label: 'Tableau',
           kind: monaco.languages.CompletionItemKind.Snippet,
           insertText: 'Tableau ${1:nom}[${2:taille}]: ${3:type}',
           insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Déclaration d\'un tableau'
+          documentation: 'Déclaration d\'un tableau',
+          range: range
         },
         {
           label: 'Tableau2D',
           kind: monaco.languages.CompletionItemKind.Snippet,
           insertText: 'Tableau ${1:nom}[${2:lignes}][${3:colonnes}]: ${4:type}',
           insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Déclaration d\'un tableau à deux dimensions'
+          documentation: 'Déclaration d\'un tableau à deux dimensions',
+          range: range
         },
         {
           label: 'Lire',
           kind: monaco.languages.CompletionItemKind.Snippet,
           insertText: 'Lire(${1:variable})',
           insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Lecture d\'une entrée'
+          documentation: 'Lecture d\'une entrée',
+          range: range
         },
         {
           label: 'Ecrire',
           kind: monaco.languages.CompletionItemKind.Snippet,
           insertText: 'Ecrire(${1:expression})',
           insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Affichage d\'une sortie'
+          documentation: 'Affichage d\'une sortie',
+          range: range
         }
       ];
-      return { suggestions };
+
+      // Add keyword suggestions
+      const keywordSuggestions = [...keywords, ...typeKeywords, ...constants, ...builtins].map(keyword => ({
+        label: keyword,
+        kind: monaco.languages.CompletionItemKind.Keyword,
+        insertText: keyword,
+        range: range
+      }));
+
+      return {
+        suggestions: [...suggestions, ...keywordSuggestions]
+      };
     }
   });
 };

@@ -119,7 +119,7 @@ const Navbar = () => {
                         damping: 10
                       }}
                     >
-                      {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+                      {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon color='primary' />}
                     </motion.div>
                   </AnimatePresence>
                 </IconButton>

@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import { AnimatePresence } from 'framer-motion';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { ChallengesProvider } from './contexts/ChallengesContext';
 import { useTheme } from './contexts/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
@@ -16,6 +17,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
+import ChallengeDetailsPage from './pages/ChallengeDetailsPage';
 
 const getTheme = (mode) => createTheme({
   palette: {
@@ -130,50 +132,56 @@ const getTheme = (mode) => createTheme({
 
 const ThemedApp = () => {
   const { mode } = useTheme();
-  const theme = getTheme(mode);
   const location = useLocation();
   
   return (
-    <MuiThemeProvider theme={theme}>
+    <MuiThemeProvider theme={getTheme(mode)}>
       <CssBaseline />
-      <div className="App">
-        <Navbar />
-        <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
-            <Route path="/editor" element={<EditorPage />} />
-            
-            {/* Protected Routes */}
-            <Route path="/challenges" element={
-              <ProtectedRoute>
-                <ChallengesPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/community" element={
-              <ProtectedRoute>
-                <CommunityPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/learn" element={
-              <ProtectedRoute>
-                <LearnPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/profile" element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            } />
-            <Route path="/settings" element={
-              <ProtectedRoute>
-                <SettingsPage />
-              </ProtectedRoute>
-            } />
-          </Routes>
-        </AnimatePresence>
-      </div>
+      <ChallengesProvider>
+        <div className="App">
+          <Navbar />
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+              <Route path="/editor" element={<EditorPage />} />
+              
+              {/* Protected Routes */}
+              <Route path="/challenges" element={
+                <ProtectedRoute>
+                  <ChallengesPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/challenges/:id" element={
+                <ProtectedRoute>
+                  <ChallengeDetailsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/community" element={
+                <ProtectedRoute>
+                  <CommunityPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/learn" element={
+                <ProtectedRoute>
+                  <LearnPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              } />
+              <Route path="/settings" element={
+                <ProtectedRoute>
+                  <SettingsPage />
+                </ProtectedRoute>
+              } />
+            </Routes>
+          </AnimatePresence>
+        </div>
+      </ChallengesProvider>
     </MuiThemeProvider>
   );
 };

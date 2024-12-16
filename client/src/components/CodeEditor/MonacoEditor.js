@@ -21,6 +21,7 @@ const MonacoEditor = ({ value, onChange, readOnly = false }) => {
       );
 
       editorRef.current = monaco.editor.create(containerRef.current, {
+        language: 'codefr',
         model: model,
         theme: mode === 'dark' ? 'vs-dark' : 'vs',
         minimap: { enabled: true },
@@ -34,6 +35,21 @@ const MonacoEditor = ({ value, onChange, readOnly = false }) => {
         wordWrap: 'on',
         suggestOnTriggerCharacters: true,
         snippetSuggestions: 'inline',
+        quickSuggestions: true,
+        quickSuggestionsDelay: 0,
+        parameterHints: {
+          enabled: true
+        },
+        suggest: {
+          snippetsPreventQuickSuggestions: false,
+          showKeywords: true,
+          showSnippets: true,
+          showClasses: true,
+          showFunctions: true,
+          showVariables: true,
+          showConstants: true,
+          showOperators: true
+        },
         scrollbar: {
           useShadows: false,
           verticalHasArrows: true,
