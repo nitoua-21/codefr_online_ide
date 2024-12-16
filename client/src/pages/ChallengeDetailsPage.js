@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -18,6 +18,13 @@ import {
   Card,
   CardContent,
   CardActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import {
   Timer as TimerIcon,
@@ -53,6 +60,9 @@ const ChallengeDetailsPage = () => {
   const [tabValue, setTabValue] = useState(0);
   const [code, setCode] = useState(challenge?.code || '');
   const [comment, setComment] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+  const [filterRating, setFilterRating] = useState(0);
+  const [viewMode, setViewMode] = useState('all');
   const [submissions] = useState([
     {
       id: 1,
@@ -83,6 +93,7 @@ Debut
 Fin`,
       rating: 4.5,
       votes: 12,
+      timestamp: '2024-12-15T14:30:00',
       comments: [
         {
           user: 'Bob',
@@ -124,6 +135,7 @@ Debut
 Fin`,
       rating: 4.8,
       votes: 15,
+      timestamp: '2024-12-16T15:45:00',
       comments: [
         {
           user: 'Claire',
@@ -149,6 +161,52 @@ Fin`,
     console.log('Adding comment:', comment);
     setComment('');
   };
+
+  const handleSortChange = (event) => {
+    setSortBy(event.target.value);
+  };
+
+  const handleRatingFilterChange = (event) => {
+    setFilterRating(event.target.value);
+  };
+
+  const handleViewModeChange = (event, newMode) => {
+    if (newMode !== null) {
+      setViewMode(newMode);
+    }
+  };
+
+  const filteredAndSortedSubmissions = useMemo(() => {
+    let filtered = [...submissions];
+
+    // Apply rating filter
+    if (filterRating > 0) {
+      filtered = filtered.filter(submission => submission.rating >= filterRating);
+    }
+
+    // Apply view mode filter
+    if (viewMode === 'top') {
+      filtered = filtered.filter(submission => submission.rating >= 4.5);
+    } else if (viewMode === 'trending') {
+      filtered = filtered.filter(submission => submission.votes >= 10);
+    }
+
+    // Apply sorting
+    return filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.timestamp) - new Date(a.timestamp);
+        case 'oldest':
+          return new Date(a.timestamp) - new Date(b.timestamp);
+        case 'rating':
+          return b.rating - a.rating;
+        case 'votes':
+          return b.votes - a.votes;
+        default:
+          return 0;
+      }
+    });
+  }, [submissions, sortBy, filterRating, viewMode]);
 
   if (!challenge) {
     return (
@@ -223,8 +281,49 @@ Fin`,
         </TabPanel>
 
         <TabPanel value={tabValue} index={1}>
+          <Box sx={{ mb: 3 }}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+              <FormControl size="small" sx={{ minWidth: 150 }}>
+                <InputLabel>Trier par</InputLabel>
+                <Select value={sortBy} onChange={handleSortChange} label="Trier par">
+                  <MenuItem value="newest">Plus récent</MenuItem>
+                  <MenuItem value="oldest">Plus ancien</MenuItem>
+                  <MenuItem value="rating">Meilleure note</MenuItem>
+                  <MenuItem value="votes">Plus de votes</MenuItem>
+                </Select>
+              </FormControl>
+
+              <FormControl size="small" sx={{ minWidth: 150 }}>
+                <InputLabel>Note minimum</InputLabel>
+                <Select value={filterRating} onChange={handleRatingFilterChange} label="Note minimum">
+                  <MenuItem value={0}>Tous</MenuItem>
+                  <MenuItem value={3}>3+ étoiles</MenuItem>
+                  <MenuItem value={4}>4+ étoiles</MenuItem>
+                  <MenuItem value={4.5}>4.5+ étoiles</MenuItem>
+                </Select>
+              </FormControl>
+
+              <ToggleButtonGroup
+                value={viewMode}
+                exclusive
+                onChange={handleViewModeChange}
+                size="small"
+              >
+                <ToggleButton value="all">
+                  Tous
+                </ToggleButton>
+                <ToggleButton value="top">
+                  Top
+                </ToggleButton>
+                <ToggleButton value="trending">
+                  Tendance
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Stack>
+          </Box>
+
           <Grid container spacing={3}>
-            {submissions.map((submission) => (
+            {filteredAndSortedSubmissions.map((submission) => (
               <Grid item xs={12} key={submission.id}>
                 <Card>
                   <CardContent>
