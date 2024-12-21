@@ -11,7 +11,8 @@ import {
   Collapse,
   IconButton,
   Snackbar,
-  Divider,
+  TextField,
+  CircularProgress,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -23,6 +24,7 @@ import {
 import { motion } from 'framer-motion';
 import AnimatedPage from '../components/AnimatedPage';
 import MonacoEditor from '../components/CodeEditor/MonacoEditor';
+import executionService from '../services/executionService';
 
 const DEFAULT_CODE = `Algorithme ExempleSimple
 Variable x, y: Entier
@@ -41,13 +43,32 @@ Fin
 const EditorPage = () => {
   const { isAuthenticated } = useAuth();
   const [code, setCode] = useState(DEFAULT_CODE);
+  const [input, setInput] = useState('');
   const [output, setOutput] = useState('');
+  const [error, setError] = useState(null);
+  const [isExecuting, setIsExecuting] = useState(false);
   const [showAuthBanner, setShowAuthBanner] = useState(!isAuthenticated);
   const [showFeatureAlert, setShowFeatureAlert] = useState(false);
 
-  const handleRunCode = () => {
-    // Implement code execution logic here
-    setOutput('Code exécuté avec succès!\nRésultat : 120');
+  const handleRunCode = async () => {
+    try {
+      setIsExecuting(true);
+      setError(null);
+      setOutput('');
+
+      const result = await executionService.executeCode(code, input);
+
+      if (result.success) {
+        setOutput(result.output);
+      } else {
+        setError(result.error || 'Échec de l\'exécution');
+      }
+    } catch (err) {
+      setError(err.message || 'Erreur lors de l\'exécution du code');
+      console.error('Code execution error:', err);
+    } finally {
+      setIsExecuting(false);
+    }
   };
 
   const handleSaveCode = () => {
@@ -75,15 +96,6 @@ const EditorPage = () => {
             severity="info"
             action={
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                <Button
-                  component={RouterLink}
-                  to="/login"
-                  variant="contained"
-                  size="small"
-                  startIcon={<LoginIcon />}
-                >
-                  Se connecter
-                </Button>
                 <IconButton
                   color="inherit"
                   size="small"
@@ -114,10 +126,11 @@ const EditorPage = () => {
           <Box sx={{ p: 2, display: 'flex', gap: 1, borderBottom: 1, borderColor: 'divider' }}>
             <Button
               variant="contained"
-              startIcon={<RunIcon />}
+              startIcon={isExecuting ? <CircularProgress size={20} /> : <RunIcon />}
               onClick={handleRunCode}
+              disabled={isExecuting}
             >
-              Exécuter
+              {isExecuting ? 'Exécution...' : 'Exécuter'}
             </Button>
             <Button
               variant="outlined"
@@ -144,7 +157,7 @@ const EditorPage = () => {
           </Box>
         </Paper>
 
-        {/* Output Container */}
+        {/* Input/Output Container */}
         <Paper 
           elevation={3}
           component={motion.div}
@@ -152,22 +165,52 @@ const EditorPage = () => {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.3, delay: 0.1 }}
         >
+          {/* Input Section */}
           <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-            <Typography variant="h6">Sortie</Typography>
+            <Typography variant="h6" gutterBottom>Entrée</Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Entrez les données d'entrée ici..."
+              variant="outlined"
+              size="small"
+              disabled={isExecuting}
+            />
           </Box>
-          <Box 
-            sx={{ 
-              p: 2, 
-              minHeight: '150px', 
-              fontFamily: 'monospace',
-              whiteSpace: 'pre-wrap',
-              bgcolor: (theme) => 
-                theme.palette.mode === 'dark' 
-                  ? 'grey.900' 
-                  : 'grey.100',
-            }}
-          >
-            {output || 'La sortie de votre code apparaîtra ici'}
+
+          {/* Output Section */}
+          <Box sx={{ p: 2 }}>
+            <Typography variant="h6" gutterBottom>Sortie</Typography>
+            <Box 
+              sx={{ 
+                p: 2, 
+                minHeight: '150px', 
+                fontFamily: 'monospace',
+                whiteSpace: 'pre-wrap',
+                bgcolor: (theme) => 
+                  theme.palette.mode === 'dark' 
+                    ? 'grey.900' 
+                    : 'grey.100',
+                borderRadius: 1,
+                border: 1,
+                borderColor: 'divider'
+              }}
+            >
+              {error ? (
+                <Typography color="error.main" sx={{ whiteSpace: 'pre-wrap' }}>
+                  {error}
+                </Typography>
+              ) : output ? (
+                output
+              ) : (
+                <Typography color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                  La sortie de votre code apparaîtra ici
+                </Typography>
+              )}
+            </Box>
           </Box>
         </Paper>
 

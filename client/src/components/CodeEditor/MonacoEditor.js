@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Box } from '@mui/material';
@@ -20,6 +20,7 @@ const MonacoEditor = ({ value, onChange, readOnly = false }) => {
         'codefr'
       );
 
+      // Create editor
       editorRef.current = monaco.editor.create(containerRef.current, {
         language: 'codefr',
         model: model,

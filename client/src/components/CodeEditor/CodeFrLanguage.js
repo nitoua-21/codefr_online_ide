@@ -1,144 +1,146 @@
+// Define keywords and tokens
+const keywords = [
+  'Algorithme', 'Debut', 'Fin',
+  'Variable', 'Variables', 'Constante',
+  'Si', 'Alors', 'SinonSi', 'Sinon', 'FinSi',
+  'TantQue', 'Faire', 'FinTantQue',
+  'Pour', 'De', 'A', 'FinPour',
+  'Lire', 'Ecrire',
+  'Et', 'Ou', 'Non', 'Oux',
+  'Mod', 'Tableau'
+];
+
+const typeKeywords = [
+  'Entier', 'Decimal', 'Chaine', 'Caractere', 'Logique'
+];
+
+const constants = [
+  'Vrai', 'Faux'
+];
+
+const builtins = [
+  'Racine', 'Abs', 'Log', 'Log10', 'Arrondi'
+];
+
+const operators = [
+  '=', '>', '<', '!', '~', '?', ':',
+  '==', '<=', '>=', '!=', '+', '-', '*', '/',
+  '^', 'Mod', 'Et', 'Ou', 'Non', 'Oux'
+];
+
+// Export language definition
+export const codeFrLanguage = {
+  ignoreCase: false,
+  defaultToken: '',
+  tokenPostfix: '.codefr',
+
+  keywords,
+  typeKeywords,
+  constants,
+  builtins,
+  operators,
+
+  // Symbols
+  symbols: /[=><!~?:&|+\-*\/\^%]+/,
+
+  // The main tokenizer for our languages
+  tokenizer: {
+    root: [
+      // Program structure - Fixed consecutive group matching
+      [/^(Algorithme)(\s+)([a-zA-Z_]\w*)/, ['keyword', 'white', 'identifier']],
+      [/^(Debut|Fin)/, 'keyword'],
+
+      // Identifiers and keywords
+      [/[a-zA-Z_]\w*/, {
+        cases: {
+          '@keywords': 'keyword',
+          '@typeKeywords': 'type',
+          '@constants': 'constant',
+          '@builtins': 'function',
+          '@default': 'identifier'
+        }
+      }],
+
+      // Whitespace
+      { include: '@whitespace' },
+
+      // Delimiters and operators
+      [/[{}()\[\]]/, '@brackets'],
+      [/[<>](?!@symbols)/, '@brackets'],
+      [/@symbols/, {
+        cases: {
+          '@operators': 'operator',
+          '@default': ''
+        }
+      }],
+
+      // Numbers
+      [/\d*\.\d+([eE][\-+]?\d+)?/, 'number.float'],
+      [/\d+/, 'number'],
+
+      // String
+      [/"([^"\\]|\\.)*$/, 'string.invalid'],
+      [/"/, { token: 'string.quote', bracket: '@open', next: '@string' }],
+    ],
+
+    comment: [
+      [/[^\/*]+/, 'comment'],
+      [/\/\*/, 'comment', '@push'],
+      ["\\*/", 'comment', '@pop'],
+      [/[\/*]/, 'comment']
+    ],
+
+    string: [
+      [/[^\\"]+/, 'string'],
+      [/"/, { token: 'string.quote', bracket: '@close', next: '@pop' }]
+    ],
+
+    whitespace: [
+      [/[ \t\r\n]+/, 'white'],
+      [/\/\*/, 'comment', '@comment'],
+      [/\/\/.*$/, 'comment'],
+    ],
+  }
+};
+
+// Export language configuration for editor
+export const codeFrConfig = {
+  comments: {
+    lineComment: '//',
+    blockComment: ['/*', '*/']
+  },
+  brackets: [
+    ['{', '}'],
+    ['[', ']'],
+    ['(', ')']
+  ],
+  autoClosingPairs: [
+    { open: '{', close: '}' },
+    { open: '[', close: ']' },
+    { open: '(', close: ')' },
+    { open: '"', close: '"', notIn: ['string'] },
+    { open: "'", close: "'", notIn: ['string', 'comment'] }
+  ],
+  surroundingPairs: [
+    { open: '{', close: '}' },
+    { open: '[', close: ']' },
+    { open: '(', close: ')' },
+    { open: '"', close: '"' },
+    { open: "'", close: "'" }
+  ],
+  folding: {
+    markers: {
+      start: new RegExp('^\\s*//\\s*#region\\b'),
+      end: new RegExp('^\\s*//\\s*#endregion\\b')
+    }
+  }
+};
+
+// Register language
 export const registerCodeFrLanguage = (monaco) => {
-  // Define keywords and tokens
-  const keywords = [
-    'Algorithme', 'Debut', 'Fin',
-    'Variable', 'Variables', 'Constante',
-    'Si', 'Alors', 'SinonSi', 'Sinon', 'FinSi',
-    'TantQue', 'Faire', 'FinTantQue',
-    'Pour', 'De', 'A', 'FinPour',
-    'Lire', 'Ecrire',
-    'Et', 'Ou', 'Non', 'Oux',
-    'Mod', 'Tableau'
-  ];
-
-  const typeKeywords = [
-    'Entier', 'Decimal', 'Chaine', 'Caractere', 'Logique'
-  ];
-
-  const constants = [
-    'Vrai', 'Faux'
-  ];
-
-  const builtins = [
-    'Racine', 'Abs', 'Log', 'Log10', 'Arrondi'
-  ];
-
-  const operators = [
-    '=', '>', '<', '!', '~', '?', ':',
-    '==', '<=', '>=', '!=', '+', '-', '*', '/',
-    '^', 'Mod', 'Et', 'Ou', 'Non', 'Oux'
-  ];
-
-  // Register language
   monaco.languages.register({ id: 'codefr' });
-
-  // Define syntax highlighting rules
-  monaco.languages.setMonarchTokensProvider('codefr', {
-    ignoreCase: false,
-    defaultToken: '',
-    tokenPostfix: '.codefr',
-
-    keywords,
-    typeKeywords,
-    constants,
-    builtins,
-    operators,
-
-    // Symbols
-    symbols: /[=><!~?:&|+\-*\/\^%]+/,
-
-    // The main tokenizer for our languages
-    tokenizer: {
-      root: [
-        // Program structure - Fixed consecutive group matching
-        [/^(Algorithme)(\s+)([a-zA-Z_]\w*)/, ['keyword', 'white', 'identifier']],
-        [/^(Debut|Fin)/, 'keyword'],
-
-        // Identifiers and keywords
-        [/[a-zA-Z_]\w*/, {
-          cases: {
-            '@keywords': 'keyword',
-            '@typeKeywords': 'type',
-            '@constants': 'constant',
-            '@builtins': 'function',
-            '@default': 'identifier'
-          }
-        }],
-
-        // Whitespace
-        { include: '@whitespace' },
-
-        // Delimiters and operators
-        [/[{}()\[\]]/, '@brackets'],
-        [/[<>](?!@symbols)/, '@brackets'],
-        [/@symbols/, {
-          cases: {
-            '@operators': 'operator',
-            '@default': ''
-          }
-        }],
-
-        // Numbers
-        [/\d*\.\d+([eE][\-+]?\d+)?/, 'number.float'],
-        [/\d+/, 'number'],
-
-        // String
-        [/"([^"\\]|\\.)*$/, 'string.invalid'],
-        [/"/, { token: 'string.quote', bracket: '@open', next: '@string' }],
-      ],
-
-      comment: [
-        [/[^\/*]+/, 'comment'],
-        [/\/\*/, 'comment', '@push'],
-        ["\\*/", 'comment', '@pop'],
-        [/[\/*]/, 'comment']
-      ],
-
-      string: [
-        [/[^\\"]+/, 'string'],
-        [/"/, { token: 'string.quote', bracket: '@close', next: '@pop' }]
-      ],
-
-      whitespace: [
-        [/[ \t\r\n]+/, 'white'],
-        [/\/\*/, 'comment', '@comment'],
-        [/\/\/.*$/, 'comment'],
-      ],
-    }
-  });
-
-  // Define language configuration
-  monaco.languages.setLanguageConfiguration('codefr', {
-    comments: {
-      lineComment: '//',
-      blockComment: ['/*', '*/']
-    },
-    brackets: [
-      ['{', '}'],
-      ['[', ']'],
-      ['(', ')']
-    ],
-    autoClosingPairs: [
-      { open: '{', close: '}' },
-      { open: '[', close: ']' },
-      { open: '(', close: ')' },
-      { open: '"', close: '"', notIn: ['string'] },
-      { open: "'", close: "'", notIn: ['string', 'comment'] }
-    ],
-    surroundingPairs: [
-      { open: '{', close: '}' },
-      { open: '[', close: ']' },
-      { open: '(', close: ')' },
-      { open: '"', close: '"' },
-      { open: "'", close: "'" }
-    ],
-    folding: {
-      markers: {
-        start: new RegExp('^\\s*//\\s*#region\\b'),
-        end: new RegExp('^\\s*//\\s*#endregion\\b')
-      }
-    }
-  });
+  monaco.languages.setMonarchTokensProvider('codefr', codeFrLanguage);
+  monaco.languages.setLanguageConfiguration('codefr', codeFrConfig);
 
   // Register completions provider
   monaco.languages.registerCompletionItemProvider('codefr', {
