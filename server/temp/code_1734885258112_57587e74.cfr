@@ -1,0 +1,14 @@
+Algorithme ExempleSimple
+Variable x: Entier
+Variable y: Entier
+Debut
+    x = 10
+    Ecrire("Veuillez Saisir la valeur de Y")
+    Lire(y)
+    
+    Si x > y Alors
+        Ecrire("x est plus grand que y")
+    Sinon
+        Ecrire("y est plus grand ou égal à x")
+    FinSi
+Fin

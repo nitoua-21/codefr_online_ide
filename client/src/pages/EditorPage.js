@@ -165,22 +165,6 @@ const EditorPage = () => {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.3, delay: 0.1 }}
         >
-          {/* Input Section */}
-          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-            <Typography variant="h6" gutterBottom>Entrée</Typography>
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Entrez les données d'entrée ici..."
-              variant="outlined"
-              size="small"
-              disabled={isExecuting}
-            />
-          </Box>
-
           {/* Output Section */}
           <Box sx={{ p: 2 }}>
             <Typography variant="h6" gutterBottom>Sortie</Typography>
