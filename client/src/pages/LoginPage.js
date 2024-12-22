@@ -21,6 +21,7 @@ const LoginPage = () => {
   const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -31,26 +32,21 @@ const LoginPage = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
+    setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     
     try {
-      // Here you would typically make an API call to authenticate
-      // For demo purposes, we'll simulate a successful login
-      const userData = {
-        id: '1',
-        email: formData.email,
-        name: formData.email.split('@')[0],
-        avatar: formData.email[0].toUpperCase(),
-      };
-      
-      await login(userData);
+      await login(formData);
       navigate('/profile');
     } catch (err) {
-      setError('Email ou mot de passe incorrect');
+      setError(err.message || 'Email ou mot de passe incorrect');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -115,6 +111,7 @@ const LoginPage = () => {
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
+                        aria-label="toggle password visibility"
                         onClick={() => setShowPassword(!showPassword)}
                         edge="end"
                       >
@@ -129,8 +126,9 @@ const LoginPage = () => {
                 fullWidth
                 variant="contained"
                 sx={{ mt: 3, mb: 2 }}
+                disabled={loading}
               >
-                Se connecter
+                {loading ? 'Connexion...' : 'Se connecter'}
               </Button>
               <Box sx={{ textAlign: 'center' }}>
                 <Link component={RouterLink} to="/signup" variant="body2">

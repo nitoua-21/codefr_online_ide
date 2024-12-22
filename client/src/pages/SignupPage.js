@@ -21,9 +21,11 @@ const SignupPage = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -34,26 +36,38 @@ const SignupPage = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
+    setError('');
+  };
+
+  const validateForm = () => {
+    if (formData.password !== formData.confirmPassword) {
+      setError('Les mots de passe ne correspondent pas');
+      return false;
+    }
+    if (formData.password.length < 6) {
+      setError('Le mot de passe doit contenir au moins 6 caractères');
+      return false;
+    }
+    if (formData.username.length < 3) {
+      setError("Le nom d'utilisateur doit contenir au moins 3 caractères");
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    if (!validateForm()) return;
 
-    if (formData.password !== formData.confirmPassword) {
-      setError('Les mots de passe ne correspondent pas');
-      return;
-    }
-
+    setLoading(true);
     try {
-      await register({
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-      });
-      navigate('/profile');
+      const { confirmPassword, ...registerData } = formData;
+      await register(registerData);
+      navigate('/dashboard');
     } catch (err) {
-      setError("Une erreur s'est produite lors de l'inscription");
+      setError(err.message || "Une erreur s'est produite lors de l'inscription");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -96,11 +110,11 @@ const SignupPage = () => {
                   <TextField
                     required
                     fullWidth
-                    id="name"
-                    label="Nom complet"
-                    name="name"
-                    autoComplete="name"
-                    value={formData.name}
+                    id="username"
+                    label="Nom d'utilisateur"
+                    name="username"
+                    autoComplete="username"
+                    value={formData.username}
                     onChange={handleChange}
                   />
                 </Grid>
@@ -131,6 +145,7 @@ const SignupPage = () => {
                       endAdornment: (
                         <InputAdornment position="end">
                           <IconButton
+                            aria-label="toggle password visibility"
                             onClick={() => setShowPassword(!showPassword)}
                             edge="end"
                           >
@@ -147,10 +162,24 @@ const SignupPage = () => {
                     fullWidth
                     name="confirmPassword"
                     label="Confirmer le mot de passe"
-                    type={showPassword ? 'text' : 'password'}
+                    type={showConfirmPassword ? 'text' : 'password'}
                     id="confirmPassword"
+                    autoComplete="new-password"
                     value={formData.confirmPassword}
                     onChange={handleChange}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label="toggle password visibility"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            edge="end"
+                          >
+                            {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
                   />
                 </Grid>
               </Grid>
@@ -159,8 +188,9 @@ const SignupPage = () => {
                 fullWidth
                 variant="contained"
                 sx={{ mt: 3, mb: 2 }}
+                disabled={loading}
               >
-                S'inscrire
+                {loading ? 'Inscription...' : "S'inscrire"}
               </Button>
               <Box sx={{ textAlign: 'center' }}>
                 <Link component={RouterLink} to="/login" variant="body2">

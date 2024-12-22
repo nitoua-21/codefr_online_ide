@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import authService from '../services/authService';
 
 const AuthContext = createContext(null);
 
@@ -7,41 +8,72 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Check for stored auth token on mount
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    // Setup axios interceptor for handling 401 errors
+    authService.setupAxiosInterceptors(() => {
+      setUser(null);
+      setError(null);
+    });
+
+    // Check for current user session
+    const checkAuth = async () => {
+      try {
+        const { user } = await authService.getCurrentUser();
+        setUser(user);
+      } catch (err) {
+        // Don't log the error if it's just an unauthorized error (not logged in)
+        if (!err.message?.includes('401')) {
+          console.error('Auth check failed:', err);
+        }
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
   }, []);
 
-  const login = (userData) => {
-    setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
+  const login = async (credentials) => {
+    try {
+      setError(null);
+      const { user } = await authService.login(credentials);
+      setUser(user);
+      return user;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
+  const logout = async () => {
+    try {
+      await authService.logout();
+      setUser(null);
+      setError(null);
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
   };
 
   const register = async (userData) => {
-    // Here you would typically make an API call to register the user
-    // For now, we'll simulate it
-    const newUser = {
-      id: Math.random().toString(36).substr(2, 9),
-      ...userData,
-      createdAt: new Date().toISOString(),
-    };
-    login(newUser);
-    return newUser;
+    try {
+      setError(null);
+      const { user } = await authService.register(userData);
+      setUser(user);
+      return user;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
   };
 
   const value = {
     user,
     loading,
+    error,
     login,
     logout,
     register,
