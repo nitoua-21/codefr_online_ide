@@ -4,6 +4,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const userRoutes = require('./routes/users');
+const profileRoutes = require('./routes/profiles');
 const codeSnippetRoutes = require('./routes/codeSnippets');
 const challengeRoutes = require('./routes/challenges');
 const executionRoutes = require('./routes/execution');
@@ -22,16 +23,17 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Routes
-app.use('/api/users', userRoutes);
-app.use('/api/code-snippets', codeSnippetRoutes);
-app.use('/api/challenges', challengeRoutes);
-app.use('/api/execution', executionRoutes);
-
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/codefr-ide')
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err));
+
+// Routes
+app.use('/api/users', userRoutes);
+app.use('/api/profiles', profileRoutes);
+app.use('/api/code-snippets', codeSnippetRoutes);
+app.use('/api/challenges', challengeRoutes);
+app.use('/api/execution', executionRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
