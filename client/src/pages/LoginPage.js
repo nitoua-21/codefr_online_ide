@@ -42,7 +42,7 @@ const LoginPage = () => {
     
     try {
       await login(formData);
-      navigate('/profile');
+      navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Email ou mot de passe incorrect');
     } finally {

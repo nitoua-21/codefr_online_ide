@@ -18,37 +18,38 @@ import SignupPage from './pages/SignupPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import ChallengeDetailsPage from './pages/ChallengeDetailsPage';
+import DashboardPage from './pages/DashboardPage';
 
 const getTheme = (mode) => createTheme({
   palette: {
     mode,
     ...(mode === 'light'
       ? {
-          // Light mode colors
-          primary: {
-            main: '#2196f3',
-          },
-          secondary: {
-            main: '#4caf50',
-          },
-          background: {
-            default: '#f5f5f5',
-            paper: '#ffffff',
-          },
-        }
+        // Light mode colors
+        primary: {
+          main: '#2196f3',
+        },
+        secondary: {
+          main: '#4caf50',
+        },
+        background: {
+          default: '#f5f5f5',
+          paper: '#ffffff',
+        },
+      }
       : {
-          // Dark mode colors
-          primary: {
-            main: '#61dafb',
-          },
-          secondary: {
-            main: '#a8e6cf',
-          },
-          background: {
-            default: '#121212',
-            paper: '#1e1e1e',
-          },
-        }),
+        // Dark mode colors
+        primary: {
+          main: '#61dafb',
+        },
+        secondary: {
+          main: '#a8e6cf',
+        },
+        background: {
+          default: '#121212',
+          paper: '#1e1e1e',
+        },
+      }),
   },
   typography: {
     fontFamily: [
@@ -133,7 +134,7 @@ const getTheme = (mode) => createTheme({
 const ThemedApp = () => {
   const { mode } = useTheme();
   const location = useLocation();
-  
+
   return (
     <MuiThemeProvider theme={getTheme(mode)}>
       <CssBaseline />
@@ -146,7 +147,7 @@ const ThemedApp = () => {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/editor" element={<EditorPage />} />
-              
+
               {/* Protected Routes */}
               <Route path="/challenges" element={
                 <ProtectedRoute>
@@ -166,6 +167,11 @@ const ThemedApp = () => {
               <Route path="/learn" element={
                 <ProtectedRoute>
                   <LearnPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <DashboardPage />
                 </ProtectedRoute>
               } />
               <Route path="/profile" element={

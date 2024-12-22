@@ -11,10 +11,12 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import MenuIcon from '@mui/icons-material/Menu';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const pages = [
   { name: 'Accueil', path: '/' },
+  { name: 'Tableau de bord', path: '/dashboard', icon: <DashboardIcon sx={{ mr: 0.5 }} />, requiresAuth: true },
   { name: 'Éditeur', path: '/editor', icon: <CodeIcon sx={{ mr: 0.5 }} />, requiresAuth: true },
   { name: 'Défis', path: '/challenges', icon: <EmojiEventsIcon sx={{ mr: 0.5 }} />, requiresAuth: true },
   { name: 'Apprendre', path: '/learn', icon: <SchoolIcon sx={{ mr: 0.5 }} />, requiresAuth: true },
