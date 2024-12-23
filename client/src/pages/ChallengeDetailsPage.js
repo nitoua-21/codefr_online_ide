@@ -11,17 +11,44 @@ import {
   CircularProgress,
   Alert,
   Stack,
-  Divider
+  Divider,
+  Tabs,
+  Tab,
+  TextField,
+  Avatar,
+  IconButton,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  ListItemSecondary
 } from '@mui/material';
 import {
   Timer as TimerIcon,
   WorkspacePremium as WorkspacePremiumIcon,
   ArrowBack as ArrowBackIcon,
-  Edit as EditIcon
+  Edit as EditIcon,
+  Send as SendIcon,
+  ThumbUp as ThumbUpIcon,
+  ThumbDown as ThumbDownIcon,
+  Code as CodeIcon
 } from '@mui/icons-material';
 import { useChallenges } from '../contexts/ChallengesContext';
 import { useAuth } from '../contexts/AuthContext';
 import AnimatedPage from '../components/AnimatedPage';
+import MonacoEditor from '../components/CodeEditor/MonacoEditor';
+
+const TabPanel = ({ children, value, index, ...other }) => (
+  <div
+    role="tabpanel"
+    hidden={value !== index}
+    id={`tabpanel-${index}`}
+    aria-labelledby={`tab-${index}`}
+    {...other}
+  >
+    {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+  </div>
+);
 
 const ChallengeDetailsPage = () => {
   const { id } = useParams();
@@ -29,12 +56,16 @@ const ChallengeDetailsPage = () => {
   const { user } = useAuth();
   const { getChallenge, loading, error } = useChallenges();
   const [challenge, setChallenge] = useState(null);
+  const [tabValue, setTabValue] = useState(0);
+  const [comment, setComment] = useState('');
+  const [code, setCode] = useState('');
 
   useEffect(() => {
     const fetchChallenge = async () => {
       try {
         const challengeData = await getChallenge(id);
         setChallenge(challengeData);
+        setCode(challengeData.initialCode || '');
       } catch (err) {
         console.error('Error fetching challenge:', err);
       }
@@ -54,6 +85,21 @@ const ChallengeDetailsPage = () => {
 
   const handleEditChallenge = () => {
     navigate(`/challenges/edit/${id}`);
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+
+  const handleCommentSubmit = () => {
+    // TODO: Implement comment submission
+    console.log('Submitting comment:', comment);
+    setComment('');
+  };
+
+  const handleSolutionSubmit = () => {
+    // TODO: Implement solution submission
+    console.log('Submitting solution:', code);
   };
 
   if (loading) {
@@ -174,6 +220,125 @@ const ChallengeDetailsPage = () => {
                 </Box>
               </Stack>
             </Paper>
+
+            {/* Tabs Section */}
+            <Paper sx={{ mt: 3 }}>
+              <Tabs value={tabValue} onChange={handleTabChange} sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                <Tab label="Solutions" icon={<CodeIcon />} iconPosition="start" />
+                <Tab label="Commentaires" icon={<ThumbUpIcon />} iconPosition="start" />
+              </Tabs>
+
+              {/* Solutions Tab */}
+              <TabPanel value={tabValue} index={0}>
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Votre Solution
+                  </Typography>
+                  <Box sx={{ height: 300, mb: 2 }}>
+                    <MonacoEditor
+                      value={code}
+                      onChange={setCode}
+                      language="javascript"
+                    />
+                  </Box>
+                  <Box display="flex" justifyContent="flex-end">
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleSolutionSubmit}
+                      startIcon={<SendIcon />}
+                    >
+                      Soumettre
+                    </Button>
+                  </Box>
+                </Box>
+
+                <Divider sx={{ my: 3 }} />
+
+                <Typography variant="h6" gutterBottom>
+                  Solutions Récentes
+                </Typography>
+                <List>
+                  {challenge.latestSolutions?.map((solution, index) => (
+                    <ListItem
+                      key={index}
+                      alignItems="flex-start"
+                      secondaryAction={
+                        <Box>
+                          <IconButton size="small" color="primary">
+                            <ThumbUpIcon />
+                          </IconButton>
+                          <IconButton size="small" color="error">
+                            <ThumbDownIcon />
+                          </IconButton>
+                        </Box>
+                      }
+                    >
+                      <ListItemAvatar>
+                        <Avatar>{solution.author.username[0]}</Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={solution.author.username}
+                        secondary={
+                          <>
+                            <Typography component="span" variant="body2" color="text.primary">
+                              {solution.status === 'passed' ? '✅ Réussi' : solution.status === 'failed' ? '❌ Échoué' : '⏳ En cours'}
+                            </Typography>
+                            {' — '}{new Date(solution.createdAt).toLocaleDateString()}
+                          </>
+                        }
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </TabPanel>
+
+              {/* Comments Tab */}
+              <TabPanel value={tabValue} index={1}>
+                <Box sx={{ mb: 3 }}>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={3}
+                    placeholder="Ajouter un commentaire..."
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    sx={{ mb: 2 }}
+                  />
+                  <Box display="flex" justifyContent="flex-end">
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleCommentSubmit}
+                      disabled={!comment.trim()}
+                      startIcon={<SendIcon />}
+                    >
+                      Commenter
+                    </Button>
+                  </Box>
+                </Box>
+
+                <List>
+                  {/* TODO: Replace with actual comments */}
+                  <ListItem alignItems="flex-start">
+                    <ListItemAvatar>
+                      <Avatar>U</Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary="Utilisateur"
+                      secondary={
+                        <>
+                          <Typography component="span" variant="body2" color="text.primary">
+                            Excellent défi ! J'ai beaucoup appris.
+                          </Typography>
+                          {' — Il y a 2 heures'}
+                        </>
+                      }
+                    />
+                  </ListItem>
+                </List>
+              </TabPanel>
+            </Paper>
           </Grid>
 
           {/* Sidebar */}
@@ -195,7 +360,7 @@ const ChallengeDetailsPage = () => {
                   Solutions soumises
                 </Typography>
                 <Typography>
-                  {challenge.solutions?.length || 0}
+                  {challenge.solutionsCount || 0}
                 </Typography>
               </Box>
             </Paper>

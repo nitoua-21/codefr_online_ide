@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Challenge = require('../models/Challenge');
 const Solution = require('../models/Solution');
+const Comment = require('../models/Comment');
 const auth = require('../middleware/auth');
 
 // Helper function to check if user can manage challenge
@@ -73,21 +74,27 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Challenge not found' });
     }
 
-    // Get solutions count
+    // Get solutions count and latest solutions
     const solutionsCount = await Solution.countDocuments({ challenge: challenge._id });
-
-    // Get latest solutions
     const latestSolutions = await Solution.find({ challenge: challenge._id })
       .sort('-createdAt')
       .limit(5)
       .populate('author', 'username')
       .select('author status createdAt');
 
+    // Get latest comments
+    const latestComments = await Comment.find({ challenge: challenge._id })
+      .sort('-createdAt')
+      .limit(10)
+      .populate('author', 'username')
+      .select('author content createdAt likes dislikes');
+
     res.json({
       challenge: {
         ...challenge.toJSON(),
         solutionsCount,
-        latestSolutions
+        latestSolutions,
+        latestComments
       }
     });
   } catch (error) {
@@ -148,10 +155,12 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(403).json({ error: 'Not authorized to delete this challenge' });
     }
 
-    // Delete all solutions for this challenge
-    await Solution.deleteMany({ challenge: challenge._id });
+    // Delete all solutions and comments for this challenge
+    await Promise.all([
+      Solution.deleteMany({ challenge: challenge._id }),
+      Comment.deleteMany({ challenge: challenge._id })
+    ]);
     
-    // Delete the challenge
     await challenge.remove();
     
     res.json({ message: 'Challenge deleted successfully' });
@@ -182,6 +191,107 @@ router.post('/:id/solutions', auth, async (req, res) => {
   } catch (error) {
     console.error('Submit solution error:', error);
     res.status(500).json({ error: 'Error submitting solution' });
+  }
+});
+
+// Add a comment
+router.post('/:id/comments', auth, async (req, res) => {
+  try {
+    const challenge = await Challenge.findById(req.params.id);
+    if (!challenge) {
+      return res.status(404).json({ error: 'Challenge not found' });
+    }
+
+    const comment = new Comment({
+      challenge: challenge._id,
+      author: req.user._id,
+      content: req.body.content
+    });
+
+    await comment.save();
+
+    const populatedComment = await Comment.findById(comment._id)
+      .populate('author', 'username')
+      .select('author content createdAt likes dislikes');
+
+    res.status(201).json({ comment: populatedComment });
+  } catch (error) {
+    console.error('Add comment error:', error);
+    res.status(500).json({ error: 'Error adding comment' });
+  }
+});
+
+// Like/Unlike a comment
+router.post('/:id/comments/:commentId/like', auth, async (req, res) => {
+  try {
+    const comment = await Comment.findById(req.params.commentId);
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+
+    const userId = req.user._id;
+    const hasLiked = comment.likes.includes(userId);
+    const hasDisliked = comment.dislikes.includes(userId);
+
+    if (hasLiked) {
+      // Unlike
+      comment.likes = comment.likes.filter(id => !id.equals(userId));
+    } else {
+      // Like and remove dislike if exists
+      comment.likes.push(userId);
+      if (hasDisliked) {
+        comment.dislikes = comment.dislikes.filter(id => !id.equals(userId));
+      }
+    }
+
+    await comment.save();
+
+    res.json({ 
+      likes: comment.likes.length,
+      dislikes: comment.dislikes.length,
+      hasLiked: comment.likes.includes(userId),
+      hasDisliked: comment.dislikes.includes(userId)
+    });
+  } catch (error) {
+    console.error('Like comment error:', error);
+    res.status(500).json({ error: 'Error liking comment' });
+  }
+});
+
+// Dislike/Undislike a comment
+router.post('/:id/comments/:commentId/dislike', auth, async (req, res) => {
+  try {
+    const comment = await Comment.findById(req.params.commentId);
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+
+    const userId = req.user._id;
+    const hasLiked = comment.likes.includes(userId);
+    const hasDisliked = comment.dislikes.includes(userId);
+
+    if (hasDisliked) {
+      // Undislike
+      comment.dislikes = comment.dislikes.filter(id => !id.equals(userId));
+    } else {
+      // Dislike and remove like if exists
+      comment.dislikes.push(userId);
+      if (hasLiked) {
+        comment.likes = comment.likes.filter(id => !id.equals(userId));
+      }
+    }
+
+    await comment.save();
+
+    res.json({ 
+      likes: comment.likes.length,
+      dislikes: comment.dislikes.length,
+      hasLiked: comment.likes.includes(userId),
+      hasDisliked: comment.dislikes.includes(userId)
+    });
+  } catch (error) {
+    console.error('Dislike comment error:', error);
+    res.status(500).json({ error: 'Error disliking comment' });
   }
 });
 
