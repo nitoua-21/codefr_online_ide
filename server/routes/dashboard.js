@@ -13,11 +13,11 @@ router.get('/stats', auth, async (req, res) => {
     // Get solved challenges count
     const solvedChallenges = await Solution.countDocuments({
       user: userId,
-      status: 'completed'
+      status: 'accepted'
     });
 
     // Calculate total points
-    const solutions = await Solution.find({ user: userId, status: 'completed' });
+    const solutions = await Solution.find({ user: userId, status: 'accepted' });
     const totalPoints = solutions.reduce((sum, solution) => sum + (solution.score || 0), 0);
 
     // Calculate streak
@@ -26,7 +26,7 @@ router.get('/stats', auth, async (req, res) => {
     
     const recentSolutions = await Solution.find({
       user: userId,
-      status: 'completed',
+      status: 'accepted',
       createdAt: { $gte: new Date(today - 7 * 24 * 60 * 60 * 1000) }
     }).sort({ createdAt: -1 });
 
@@ -47,17 +47,47 @@ router.get('/stats', auth, async (req, res) => {
       }
     }
 
-    // Calculate rank
-    const allUsers = await User.find({});
-    const userRanking = allUsers.sort((a, b) => b.totalPoints - a.totalPoints);
-    const userRank = userRanking.findIndex(user => user._id.equals(userId)) + 1;
-    const rankPercentile = Math.round((1 - userRank / allUsers.length) * 100);
-
-    // Determine rank title
+    // Calculate rank based on total points
     let rank = 'Débutant';
     if (totalPoints >= 1000) rank = 'Expert';
     else if (totalPoints >= 500) rank = 'Avancé';
     else if (totalPoints >= 100) rank = 'Intermédiaire';
+
+    // Get user ranking
+    const allUsers = await User.aggregate([
+      {
+        $lookup: {
+          from: 'solutions',
+          let: { userId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$user', '$$userId'] },
+                    { $eq: ['$status', 'accepted'] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: 'solutions'
+        }
+      },
+      {
+        $addFields: {
+          totalPoints: {
+            $sum: '$solutions.score'
+          }
+        }
+      },
+      {
+        $sort: { totalPoints: -1 }
+      }
+    ]);
+
+    const userRank = allUsers.findIndex(user => user._id.equals(userId)) + 1;
+    const rankPercentile = Math.round((1 - userRank / allUsers.length) * 100);
 
     res.json({
       success: true,
@@ -89,10 +119,11 @@ router.get('/activity', auth, async (req, res) => {
 
     const activities = recentSolutions.map(solution => ({
       id: solution._id,
-      type: 'Solution',
+      type: 'solution',
       title: solution.challenge.title,
-      description: `Défi ${solution.challenge.difficulty} ${solution.status === 'completed' ? 'complété' : 'tenté'}`,
-      date: solution.createdAt
+      description: `Défi ${solution.challenge.difficulty} - ${getStatusText(solution.status)}`,
+      date: solution.createdAt,
+      status: solution.status
     }));
 
     res.json({
@@ -116,16 +147,17 @@ router.get('/recommended', auth, async (req, res) => {
     // Get user's completed challenges
     const completedChallenges = await Solution.find({
       user: userId,
-      status: 'completed'
+      status: 'accepted'
     }).distinct('challenge');
 
     // Find challenges not completed by user
     const recommendedChallenges = await Challenge.find({
-      _id: { $nin: completedChallenges }
+      _id: { $nin: completedChallenges },
+      isPublished: true
     })
-      .sort({ difficulty: 1 })
+      .sort({ difficulty: 1, points: 1 })
       .limit(5)
-      .select('title difficulty description');
+      .select('title difficulty description points');
 
     res.json({
       success: true,
@@ -139,5 +171,20 @@ router.get('/recommended', auth, async (req, res) => {
     });
   }
 });
+
+// Helper function to get status text
+function getStatusText(status) {
+  const statusMap = {
+    'pending': 'En attente',
+    'running': 'En cours',
+    'accepted': 'Réussi',
+    'wrong_answer': 'Mauvaise réponse',
+    'time_limit': 'Temps dépassé',
+    'memory_limit': 'Mémoire dépassée',
+    'runtime_error': 'Erreur d\'exécution',
+    'compilation_error': 'Erreur de compilation'
+  };
+  return statusMap[status] || status;
+}
 
 module.exports = router;

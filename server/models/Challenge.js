@@ -50,43 +50,41 @@ const challengeSchema = new mongoose.Schema({
   },
   timeLimit: {
     type: Number,
-    default: 1000, // in milliseconds
-    min: 100,
-    max: 10000
+    default: 300, // 5 minutes in seconds
+    min: 60,      // minimum 1 minute
+    max: 3600     // maximum 1 hour
   },
   memoryLimit: {
     type: Number,
-    default: 256, // in MB
-    min: 16,
-    max: 512
+    default: 128, // 128 MB
+    min: 16,      // minimum 16 MB
+    max: 512      // maximum 512 MB
+  },
+  points: {
+    type: Number,
+    required: true,
+    min: 0
   },
   author: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
+  isPublished: {
+    type: Boolean,
+    default: false
+  },
   tags: [{
     type: String,
     trim: true
   }],
-  status: {
-    type: String,
-    enum: ['draft', 'published', 'archived'],
-    default: 'draft'
+  submissions: {
+    type: Number,
+    default: 0
   },
-  statistics: {
-    totalAttempts: {
-      type: Number,
-      default: 0
-    },
-    successfulAttempts: {
-      type: Number,
-      default: 0
-    },
-    averageScore: {
-      type: Number,
-      default: 0
-    }
+  successfulSubmissions: {
+    type: Number,
+    default: 0
   }
 }, {
   timestamps: true,
@@ -96,12 +94,39 @@ const challengeSchema = new mongoose.Schema({
 
 // Virtual for success rate
 challengeSchema.virtual('successRate').get(function() {
-  if (this.statistics.totalAttempts === 0) return 0;
-  return (this.statistics.successfulAttempts / this.statistics.totalAttempts) * 100;
+  if (this.submissions === 0) return 0;
+  return (this.successfulSubmissions / this.submissions * 100).toFixed(2);
 });
 
-// Index for searching
-challengeSchema.index({ title: 'text', description: 'text', tags: 'text' });
+// Virtual for time estimate based on difficulty
+challengeSchema.virtual('timeEstimate').get(function() {
+  switch(this.difficulty) {
+    case 'Facile':
+      return '15-30 min';
+    case 'Moyen':
+      return '30-60 min';
+    case 'Difficile':
+      return '60+ min';
+    default:
+      return 'N/A';
+  }
+});
+
+// Index for search
+challengeSchema.index({
+  title: 'text',
+  description: 'text',
+  tags: 'text'
+});
+
+// Compound index for filtering and sorting
+challengeSchema.index({
+  isPublished: 1,
+  difficulty: 1,
+  category: 1,
+  points: 1,
+  createdAt: -1
+});
 
 const Challenge = mongoose.model('Challenge', challengeSchema);
 

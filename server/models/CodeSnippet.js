@@ -1,5 +1,23 @@
 const mongoose = require('mongoose');
 
+const commentSchema = new mongoose.Schema({
+  author: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  content: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: [1000, 'Comment cannot exceed 1000 characters']
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 const codeSnippetSchema = new mongoose.Schema({
   title: {
     type: String,
@@ -18,10 +36,9 @@ const codeSnippetSchema = new mongoose.Schema({
     required: [true, 'Code content is required'],
     maxlength: [50000, 'Code cannot exceed 50000 characters']
   },
-  language: {
+  programmingLanguage: {
     type: String,
     default: 'codefr',
-    enum: ['codefr'],
     required: true
   },
   tags: [{
@@ -37,22 +54,49 @@ const codeSnippetSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  stars: [{
+  likes: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
+  comments: [commentSchema],
+  forkedFrom: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'CodeSnippet'
+  },
   forks: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'CodeSnippet'
   }],
-  forkedFrom: {
+  challenge: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'CodeSnippet'
+    ref: 'Challenge'
+  },
+  isSolution: {
+    type: Boolean,
+    default: false
+  },
+  stars: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
   toObject: { virtuals: true }
+});
+
+// Update the updatedAt timestamp before saving
+codeSnippetSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
 });
 
 // Virtual for star count
@@ -65,7 +109,7 @@ codeSnippetSchema.virtual('forkCount').get(function() {
   return this.forks.length;
 });
 
-// Index for searching
+// Add text index for search
 codeSnippetSchema.index({ title: 'text', description: 'text', tags: 'text' });
 
 const CodeSnippet = mongoose.model('CodeSnippet', codeSnippetSchema);

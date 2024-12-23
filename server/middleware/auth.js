@@ -3,37 +3,29 @@ const User = require('../models/User');
 
 const auth = async (req, res, next) => {
   try {
-    // Get token from cookie or header
-    const token = req.cookies.token || req.header('Authorization')?.replace('Bearer ', '');
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new Error('Authentication required');
+    }
 
+    const token = authHeader.split(' ')[1];
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        error: 'Authentication required'
-      });
+      throw new Error('Authentication required');
     }
 
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // Find user
-    const user = await User.findById(decoded.userId).select('-password');
-    
+    const user = await User.findById(decoded.userId);
+
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        error: 'User not found'
-      });
+      throw new Error('User not found');
     }
 
-    // Add user to request
     req.user = user;
     next();
   } catch (error) {
-    console.error('Authentication error:', error);
     res.status(401).json({
       success: false,
-      error: 'Invalid authentication token'
+      error: 'Authentication required'
     });
   }
 };

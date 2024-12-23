@@ -9,25 +9,33 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     // Setup axios interceptor for handling 401 errors
-    authService.setupAxiosInterceptors(() => {
-      setUser(null);
-      setError(null);
+    authService.setupAxiosInterceptors(async () => {
+      await handleLogout();
     });
 
     // Check for current user session
     const checkAuth = async () => {
       try {
+        if (!authService.isAuthenticated()) {
+          setIsAuthenticated(false);
+          setUser(null);
+          return;
+        }
+
         const { user } = await authService.getCurrentUser();
         setUser(user);
+        setIsAuthenticated(true);
       } catch (err) {
         // Don't log the error if it's just an unauthorized error (not logged in)
         if (!err.message?.includes('401')) {
           console.error('Auth check failed:', err);
         }
         setUser(null);
+        setIsAuthenticated(false);
       } finally {
         setLoading(false);
       }
@@ -36,11 +44,18 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
+  const handleLogout = async () => {
+    setUser(null);
+    setIsAuthenticated(false);
+    setError(null);
+  };
+
   const login = async (credentials) => {
     try {
       setError(null);
-      const { user } = await authService.login(credentials);
+      const { user, token } = await authService.login(credentials);
       setUser(user);
+      setIsAuthenticated(true);
       return user;
     } catch (err) {
       setError(err.message);
@@ -51,18 +66,19 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await authService.logout();
-      setUser(null);
-      setError(null);
+      await handleLogout();
     } catch (err) {
-      console.error('Logout error:', err);
+      setError(err.message);
+      throw err;
     }
   };
 
   const register = async (userData) => {
     try {
       setError(null);
-      const { user } = await authService.register(userData);
+      const { user, token } = await authService.register(userData);
       setUser(user);
+      setIsAuthenticated(true);
       return user;
     } catch (err) {
       setError(err.message);
@@ -74,15 +90,15 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     error,
+    isAuthenticated,
     login,
     logout,
-    register,
-    isAuthenticated: !!user,
+    register
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

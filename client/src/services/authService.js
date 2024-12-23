@@ -1,13 +1,14 @@
-import axios from 'axios';
+import api from './api';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const authService = {
   register: async (userData) => {
     try {
-      const response = await axios.post(`${API_URL}/users/register`, userData, {
-        withCredentials: true
-      });
+      const response = await api.post('/users/register', userData);
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
       return response.data;
     } catch (error) {
       throw error.response?.data?.error || 'Error during registration';
@@ -16,9 +17,10 @@ const authService = {
 
   login: async (credentials) => {
     try {
-      const response = await axios.post(`${API_URL}/users/login`, credentials, {
-        withCredentials: true
-      });
+      const response = await api.post('/users/login', credentials);
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
       return response.data;
     } catch (error) {
       throw error.response?.data?.error || 'Error during login';
@@ -27,37 +29,47 @@ const authService = {
 
   logout: async () => {
     try {
-      await axios.post(`${API_URL}/users/logout`, {}, {
-        withCredentials: true
-      });
-      return true;
+      await api.post('/users/logout');
     } catch (error) {
-      throw error.response?.data?.error || 'Error during logout';
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.removeItem('token');
+      return true;
     }
   },
 
   getCurrentUser: async () => {
     try {
-      const response = await axios.get(`${API_URL}/users/me`, {
-        withCredentials: true
-      });
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No token found');
+      }
+      const response = await api.get('/users/me');
       return response.data;
     } catch (error) {
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+      }
       throw error.response?.data?.error || 'Error getting current user';
     }
   },
 
   // Setup axios interceptor for authentication
   setupAxiosInterceptors: (logout) => {
-    axios.interceptors.response.use(
+    api.interceptors.response.use(
       (response) => response,
-      (error) => {
+      async (error) => {
         if (error.response?.status === 401) {
-          logout();
+          await logout();
         }
         return Promise.reject(error);
       }
     );
+  },
+
+  // Check if user is authenticated
+  isAuthenticated: () => {
+    return !!localStorage.getItem('token');
   }
 };
 

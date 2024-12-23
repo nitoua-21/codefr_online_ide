@@ -10,26 +10,43 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Box
+  Box,
+  Stack,
+  Chip,
+  Typography,
+  Alert
 } from '@mui/material';
 import MonacoEditor from '../CodeEditor/MonacoEditor';
 
-const ChallengeDialog = ({ open, onClose, onSave, challenge = null }) => {
-  const [formData, setFormData] = useState({
-    title: '',
-    difficulty: 'Facile',
-    timeEstimate: '',
-    points: '',
-    description: '',
-    category: '',
-    code: ''
-  });
+const difficultyLevels = ['Facile', 'Moyen', 'Difficile'];
+const categories = ['Algorithmes', 'Structures de données', 'Mathématiques', 'Logique', 'Autres'];
+
+const defaultFormData = {
+  title: '',
+  description: '',
+  difficulty: 'Facile',
+  category: 'Algorithmes',
+  initialCode: '',
+  solution: '',
+  points: 100,
+  timeLimit: 300,
+  memoryLimit: 128,
+  hints: [],
+  tags: [],
+  testCases: []
+};
+
+const ChallengeDialog = ({ open, onClose, onSubmit, challenge = null }) => {
+  const [formData, setFormData] = useState(defaultFormData);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (challenge) {
       setFormData(challenge);
+    } else {
+      setFormData(defaultFormData);
     }
-  }, [challenge]);
+  }, [challenge, open]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -39,96 +56,177 @@ const ChallengeDialog = ({ open, onClose, onSave, challenge = null }) => {
     }));
   };
 
-  const handleCodeChange = (value) => {
+  const handleCodeChange = (value, type) => {
     setFormData(prev => ({
       ...prev,
-      code: value
+      [type]: value
     }));
   };
 
-  const handleSubmit = () => {
-    onSave(formData);
-    onClose();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+
+    try {
+      // Basic validation
+      if (!formData.title || !formData.description || !formData.initialCode || !formData.solution) {
+        throw new Error('Veuillez remplir tous les champs obligatoires');
+      }
+
+      await onSubmit(formData);
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        {challenge ? 'Modifier le défi' : 'Créer un nouveau défi'}
-      </DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-          <TextField
-            name="title"
-            label="Titre"
-            value={formData.title}
-            onChange={handleChange}
-            fullWidth
-          />
-          
-          <FormControl fullWidth>
-            <InputLabel>Difficulté</InputLabel>
-            <Select
-              name="difficulty"
-              value={formData.difficulty}
+    <Dialog 
+      open={open} 
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+    >
+      <form onSubmit={handleSubmit}>
+        <DialogTitle>
+          {challenge ? 'Modifier le défi' : 'Nouveau défi'}
+        </DialogTitle>
+
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 2 }}>
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+
+            <TextField
+              fullWidth
+              label="Titre"
+              name="title"
+              value={formData.title}
               onChange={handleChange}
-              label="Difficulté"
-            >
-              <MenuItem value="Facile">Facile</MenuItem>
-              <MenuItem value="Moyen">Moyen</MenuItem>
-              <MenuItem value="Difficile">Difficile</MenuItem>
-            </Select>
-          </FormControl>
-
-          <TextField
-            name="timeEstimate"
-            label="Temps estimé"
-            value={formData.timeEstimate}
-            onChange={handleChange}
-            fullWidth
-          />
-
-          <TextField
-            name="points"
-            label="Points"
-            type="number"
-            value={formData.points}
-            onChange={handleChange}
-            fullWidth
-          />
-
-          <TextField
-            name="category"
-            label="Catégorie"
-            value={formData.category}
-            onChange={handleChange}
-            fullWidth
-          />
-
-          <TextField
-            name="description"
-            label="Description"
-            value={formData.description}
-            onChange={handleChange}
-            multiline
-            rows={4}
-            fullWidth
-          />
-
-          <Box sx={{ height: 300 }}>
-            <MonacoEditor
-              value={formData.code}
-              onChange={handleCodeChange}
+              required
             />
-          </Box>
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Annuler</Button>
-        <Button onClick={handleSubmit} variant="contained" color="primary">
-          {challenge ? 'Mettre à jour' : 'Créer'}
-        </Button>
-      </DialogActions>
+
+            <TextField
+              fullWidth
+              label="Description"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              multiline
+              rows={4}
+              required
+            />
+
+            <Box display="flex" gap={2}>
+              <FormControl fullWidth>
+                <InputLabel>Difficulté</InputLabel>
+                <Select
+                  name="difficulty"
+                  value={formData.difficulty}
+                  onChange={handleChange}
+                  label="Difficulté"
+                  required
+                >
+                  {difficultyLevels.map(level => (
+                    <MenuItem key={level} value={level}>
+                      {level}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth>
+                <InputLabel>Catégorie</InputLabel>
+                <Select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  label="Catégorie"
+                  required
+                >
+                  {categories.map(category => (
+                    <MenuItem key={category} value={category}>
+                      {category}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+
+            <Box display="flex" gap={2}>
+              <TextField
+                type="number"
+                label="Points"
+                name="points"
+                value={formData.points}
+                onChange={handleChange}
+                required
+                inputProps={{ min: 0 }}
+              />
+
+              <TextField
+                type="number"
+                label="Temps limite (secondes)"
+                name="timeLimit"
+                value={formData.timeLimit}
+                onChange={handleChange}
+                required
+                inputProps={{ min: 60, max: 3600 }}
+              />
+
+              <TextField
+                type="number"
+                label="Mémoire limite (MB)"
+                name="memoryLimit"
+                value={formData.memoryLimit}
+                onChange={handleChange}
+                required
+                inputProps={{ min: 16, max: 512 }}
+              />
+            </Box>
+
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>
+                Code initial
+              </Typography>
+              <MonacoEditor
+                height="200px"
+                language="codefr"
+                value={formData.initialCode}
+                onChange={(value) => handleCodeChange(value, 'initialCode')}
+              />
+            </Box>
+
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>
+                Solution
+              </Typography>
+              <MonacoEditor
+                height="200px"
+                language="codefr"
+                value={formData.solution}
+                onChange={(value) => handleCodeChange(value, 'solution')}
+              />
+            </Box>
+          </Stack>
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={onClose}>
+            Annuler
+          </Button>
+          <Button 
+            type="submit"
+            variant="contained"
+            color="primary"
+          >
+            {challenge ? 'Mettre à jour' : 'Créer'}
+          </Button>
+        </DialogActions>
+      </form>
     </Dialog>
   );
 };

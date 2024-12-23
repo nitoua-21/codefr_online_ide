@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -23,6 +23,8 @@ import {
   Collapse,
   ToggleButton,
   ToggleButtonGroup,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import {
   Timer as TimerIcon,
@@ -41,425 +43,386 @@ import { useAuth } from '../contexts/AuthContext';
 import ChallengeDialog from '../components/Challenges/ChallengeDialog';
 import AnimatedPage from '../components/AnimatedPage';
 
+const difficultyLevels = ['Facile', 'Moyen', 'Difficile'];
+const categories = ['Algorithmes', 'Applications', 'Structures de données', 'Mathématiques'];
+
 const ChallengesPage = () => {
-  const { challenges, deleteChallenge } = useChallenges();
+  const {
+    challenges,
+    loading,
+    error,
+    filters,
+    createChallenge,
+    updateChallenge,
+    deleteChallenge,
+    updateFilters,
+    resetFilters,
+    refreshChallenges
+  } = useChallenges();
+  
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedChallenge, setSelectedChallenge] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [challengeToDelete, setChallengeToDelete] = useState(null);
+  const [viewMode, setViewMode] = useState('all'); // 'all' or 'my'
+  
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isAdmin = true;
 
-  // Search and filter states
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [difficulty, setDifficulty] = useState('all');
-  const [category, setCategory] = useState('all');
-  const [timeRange, setTimeRange] = useState('all');
-  const [pointsRange, setPointsRange] = useState('all');
-  const [sortBy, setSortBy] = useState('newest');
-  const [selectedTags, setSelectedTags] = useState([]);
+  // Check if user can edit/delete a challenge
+  const canManageChallenge = useCallback((challenge) => {
+    if (!user || !challenge) return false;
+    return user.role === 'admin' || challenge.author === user._id;
+  }, [user]);
 
-  // Extract unique categories and tags from challenges
-  const categories = useMemo(() => {
-    const uniqueCategories = new Set(challenges.map(c => c.category));
-    return Array.from(uniqueCategories);
-  }, [challenges]);
+  const handleSearch = useCallback((event) => {
+    updateFilters({ search: event.target.value });
+  }, [updateFilters]);
 
-  const tags = useMemo(() => {
-    const uniqueTags = new Set(challenges.flatMap(c => c.tags || []));
-    return Array.from(uniqueTags);
-  }, [challenges]);
+  const handleDifficultyChange = useCallback((event) => {
+    updateFilters({ difficulty: event.target.value });
+  }, [updateFilters]);
 
-  const handleOpenDialog = (challenge = null) => {
+  const handleCategoryChange = useCallback((event) => {
+    updateFilters({ category: event.target.value });
+  }, [updateFilters]);
+
+  const handleSortChange = useCallback((event, newSort) => {
+    if (newSort !== null) {
+      updateFilters({ sortBy: newSort });
+    }
+  }, [updateFilters]);
+
+  const handleClearFilters = useCallback(() => {
+    resetFilters();
+  }, [resetFilters]);
+
+  const handleOpenChallenge = useCallback((challenge) => {
+    navigate(`/challenges/${challenge._id}`);
+  }, [navigate]);
+
+  const handleCreateChallenge = useCallback(async (challengeData) => {
+    try {
+      await createChallenge(challengeData);
+      setOpenDialog(false);
+      refreshChallenges();
+    } catch (err) {
+      console.error('Error creating challenge:', err);
+    }
+  }, [createChallenge, refreshChallenges]);
+
+  const handleUpdateChallenge = useCallback(async (challengeData) => {
+    try {
+      await updateChallenge(selectedChallenge._id, challengeData);
+      setOpenDialog(false);
+      setSelectedChallenge(null);
+      refreshChallenges();
+    } catch (err) {
+      console.error('Error updating challenge:', err);
+    }
+  }, [selectedChallenge, updateChallenge, refreshChallenges]);
+
+  const handleDeleteChallenge = useCallback(async () => {
+    try {
+      await deleteChallenge(challengeToDelete._id);
+      setDeleteConfirmOpen(false);
+      setChallengeToDelete(null);
+      refreshChallenges();
+    } catch (err) {
+      console.error('Error deleting challenge:', err);
+    }
+  }, [challengeToDelete, deleteChallenge, refreshChallenges]);
+
+  const handleEditChallenge = useCallback((challenge) => {
     setSelectedChallenge(challenge);
     setOpenDialog(true);
-  };
+  }, []);
 
-  const handleCloseDialog = () => {
-    setSelectedChallenge(null);
-    setOpenDialog(false);
-  };
+  const handleConfirmDelete = useCallback((challenge) => {
+    setChallengeToDelete(challenge);
+    setDeleteConfirmOpen(true);
+  }, []);
 
-  const handleStartChallenge = (challenge) => {
-    navigate(`/challenges/${challenge.id}`);
-  };
-
-  const handleDeleteChallenge = (challengeId) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce défi ?')) {
-      deleteChallenge(challengeId);
-    }
-  };
-
-  const handleClearFilters = () => {
-    setSearchQuery('');
-    setDifficulty('all');
-    setCategory('all');
-    setTimeRange('all');
-    setPointsRange('all');
-    setSortBy('newest');
-    setSelectedTags([]);
-  };
-
-  const filteredChallenges = useMemo(() => {
-    let filtered = [...challenges];
-
-    // Search query filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(challenge =>
-        challenge.title.toLowerCase().includes(query) ||
-        challenge.description.toLowerCase().includes(query) ||
-        challenge.code.toLowerCase().includes(query) ||
-        (challenge.tags && challenge.tags.some(tag => tag.toLowerCase().includes(query)))
-      );
-    }
-
-    // Difficulty filter
-    if (difficulty !== 'all') {
-      filtered = filtered.filter(challenge => challenge.difficulty === difficulty);
-    }
-
-    // Category filter
-    if (category !== 'all') {
-      filtered = filtered.filter(challenge => challenge.category === category);
-    }
-
-    // Time range filter
-    if (timeRange !== 'all') {
-      const [min, max] = timeRange.split('-').map(Number);
-      filtered = filtered.filter(challenge => {
-        const time = parseInt(challenge.timeEstimate);
-        return time >= min && (!max || time <= max);
-      });
-    }
-
-    // Points range filter
-    if (pointsRange !== 'all') {
-      const [min, max] = pointsRange.split('-').map(Number);
-      filtered = filtered.filter(challenge => {
-        const points = challenge.points;
-        return points >= min && (!max || points <= max);
-      });
-    }
-
-    // Tags filter
-    if (selectedTags.length > 0) {
-      filtered = filtered.filter(challenge =>
-        selectedTags.every(tag => challenge.tags && challenge.tags.includes(tag))
-      );
-    }
-
-    // Sorting
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'newest':
-          return new Date(b.createdAt) - new Date(a.createdAt);
-        case 'oldest':
-          return new Date(a.createdAt) - new Date(b.createdAt);
-        case 'points-high':
-          return b.points - a.points;
-        case 'points-low':
-          return a.points - b.points;
-        case 'time-short':
-          return parseInt(a.timeEstimate) - parseInt(b.timeEstimate);
-        case 'time-long':
-          return parseInt(b.timeEstimate) - parseInt(a.timeEstimate);
-        default:
-          return 0;
-      }
-    });
-
-    return filtered;
-  }, [challenges, searchQuery, difficulty, category, timeRange, pointsRange, sortBy, selectedTags]);
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <AnimatedPage>
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box sx={{ mb: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h4" component="h1">
-              Défis CodeFr
-            </Typography>
-            {isAdmin && (
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<AddIcon />}
-                onClick={() => handleOpenDialog()}
-              >
-                Nouveau Défi
-              </Button>
-            )}
-          </Box>
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
 
-          <Paper sx={{ p: 2 }}>
-            <Stack spacing={2}>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <TextField
-                  fullWidth
-                  placeholder="Rechercher par titre, description, code..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon />
-                      </InputAdornment>
-                    ),
-                    endAdornment: searchQuery && (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={() => setSearchQuery('')}>
-                          <ClearIcon />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
+        {/* Header with search and filters */}
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <Stack spacing={2}>
+            <Box display="flex" justifyContent="space-between" alignItems="center">
+              <Typography variant="h5" component="h1">
+                Défis CodeFr
+              </Typography>
+              <Box display="flex" gap={2} alignItems="center">
+                <ToggleButtonGroup
+                  value={viewMode}
+                  exclusive
+                  onChange={(e, newMode) => {
+                    if (newMode !== null) {
+                      setViewMode(newMode);
+                      updateFilters({ author: newMode === 'my' ? user?._id : '' });
+                    }
                   }}
-                />
-                <Button
-                  variant="outlined"
-                  startIcon={<FilterListIcon />}
-                  endIcon={showFilters ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                  onClick={() => setShowFilters(!showFilters)}
+                  size="small"
                 >
-                  Filtres
-                </Button>
-                {(searchQuery || difficulty !== 'all' || category !== 'all' || timeRange !== 'all' || pointsRange !== 'all' || selectedTags.length > 0) && (
+                  <ToggleButton value="all">
+                    Tous les défis
+                  </ToggleButton>
+                  <ToggleButton value="my">
+                    Mes défis
+                  </ToggleButton>
+                </ToggleButtonGroup>
+                {user && (
                   <Button
-                    variant="outlined"
-                    color="error"
-                    startIcon={<ClearIcon />}
-                    onClick={handleClearFilters}
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => setOpenDialog(true)}
                   >
-                    Réinitialiser
+                    Nouveau Défi
                   </Button>
                 )}
               </Box>
+            </Box>
 
-              <Collapse in={showFilters}>
-                <Stack spacing={2} sx={{ mt: 2 }}>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Difficulté</InputLabel>
-                        <Select
-                          value={difficulty}
-                          onChange={(e) => setDifficulty(e.target.value)}
-                          label="Difficulté"
-                        >
-                          <MenuItem value="all">Toutes</MenuItem>
-                          <MenuItem value="Facile">Facile</MenuItem>
-                          <MenuItem value="Moyen">Moyen</MenuItem>
-                          <MenuItem value="Difficile">Difficile</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
+            <Box display="flex" alignItems="center" gap={2}>
+              <TextField
+                fullWidth
+                placeholder="Rechercher un défi..."
+                value={filters.search}
+                onChange={handleSearch}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  )
+                }}
+              />
+              <IconButton onClick={() => setShowFilters(!showFilters)}>
+                <FilterListIcon />
+              </IconButton>
+              {(filters.difficulty || filters.category || filters.sortBy !== '-createdAt') && (
+                <IconButton onClick={handleClearFilters}>
+                  <ClearIcon />
+                </IconButton>
+              )}
+            </Box>
 
-                    <Grid item xs={12} sm={6} md={3}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Catégorie</InputLabel>
-                        <Select
-                          value={category}
-                          onChange={(e) => setCategory(e.target.value)}
-                          label="Catégorie"
-                        >
-                          <MenuItem value="all">Toutes</MenuItem>
-                          {categories.map((cat) => (
-                            <MenuItem key={cat} value={cat}>{cat}</MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-
-                    <Grid item xs={12} sm={6} md={3}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Temps estimé</InputLabel>
-                        <Select
-                          value={timeRange}
-                          onChange={(e) => setTimeRange(e.target.value)}
-                          label="Temps estimé"
-                        >
-                          <MenuItem value="all">Tous</MenuItem>
-                          <MenuItem value="0-15">≤ 15 min</MenuItem>
-                          <MenuItem value="15-30">15-30 min</MenuItem>
-                          <MenuItem value="30-60">30-60 min</MenuItem>
-                          <MenuItem value="60-">60+ min</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-
-                    <Grid item xs={12} sm={6} md={3}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Points</InputLabel>
-                        <Select
-                          value={pointsRange}
-                          onChange={(e) => setPointsRange(e.target.value)}
-                          label="Points"
-                        >
-                          <MenuItem value="all">Tous</MenuItem>
-                          <MenuItem value="0-100">0-100</MenuItem>
-                          <MenuItem value="100-300">100-300</MenuItem>
-                          <MenuItem value="300-500">300-500</MenuItem>
-                          <MenuItem value="500-">500+</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                  </Grid>
-
-                  <Box>
-                    <Autocomplete
-                      multiple
-                      size="small"
-                      options={tags}
-                      value={selectedTags}
-                      onChange={(event, newValue) => setSelectedTags(newValue)}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="Tags"
-                          placeholder="Sélectionner des tags"
-                        />
-                      )}
-                      renderTags={(value, getTagProps) =>
-                        value.map((option, index) => (
-                          <Chip
-                            label={option}
-                            {...getTagProps({ index })}
-                            size="small"
-                          />
-                        ))
-                      }
-                    />
-                  </Box>
-
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <FormControl size="small" sx={{ minWidth: 200 }}>
-                      <InputLabel>Trier par</InputLabel>
-                      <Select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        label="Trier par"
-                      >
-                        <MenuItem value="newest">Plus récent</MenuItem>
-                        <MenuItem value="oldest">Plus ancien</MenuItem>
-                        <MenuItem value="points-high">Points (décroissant)</MenuItem>
-                        <MenuItem value="points-low">Points (croissant)</MenuItem>
-                        <MenuItem value="time-short">Temps (plus court)</MenuItem>
-                        <MenuItem value="time-long">Temps (plus long)</MenuItem>
-                      </Select>
-                    </FormControl>
-
-                    <Typography variant="body2" color="text.secondary">
-                      {filteredChallenges.length} défi{filteredChallenges.length !== 1 ? 's' : ''} trouvé{filteredChallenges.length !== 1 ? 's' : ''}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </Collapse>
-            </Stack>
-          </Paper>
-        </Box>
-
-        <Grid container spacing={3}>
-          {filteredChallenges.map((challenge) => (
-            <Grid item xs={12} sm={6} md={4} key={challenge.id}>
-              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                    <Typography variant="h6" component="h2" gutterBottom>
-                      {challenge.title}
-                    </Typography>
-                    {isAdmin && (
-                      <Box>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleOpenDialog(challenge)}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDeleteChallenge(challenge.id)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Box>
-                    )}
-                  </Box>
-
-                  <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                    <Chip
-                      label={challenge.difficulty}
-                      color={
-                        challenge.difficulty === 'Facile'
-                          ? 'success'
-                          : challenge.difficulty === 'Moyen'
-                          ? 'warning'
-                          : 'error'
-                      }
-                      size="small"
-                    />
-                    <Chip label={challenge.category} variant="outlined" size="small" />
-                  </Box>
-
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{
-                      mb: 2,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 3,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    {challenge.description}
-                  </Typography>
-
-                  <Box sx={{ display: 'flex', gap: 2, color: 'text.secondary', mb: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <TimerIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                      <Typography variant="body2">{challenge.timeEstimate}</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <WorkspacePremiumIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                      <Typography variant="body2">{challenge.points} pts</Typography>
-                    </Box>
-                  </Box>
-
-                  {challenge.tags && (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {challenge.tags.map((tag) => (
-                        <Chip
-                          key={tag}
-                          label={tag}
-                          size="small"
-                          variant="outlined"
-                          sx={{ fontSize: '0.75rem' }}
-                        />
+            <Collapse in={showFilters}>
+              <Stack spacing={2} sx={{ mt: 2 }}>
+                <Box display="flex" gap={2}>
+                  <FormControl fullWidth>
+                    <InputLabel>Difficulté</InputLabel>
+                    <Select
+                      value={filters.difficulty}
+                      onChange={handleDifficultyChange}
+                      label="Difficulté"
+                    >
+                      <MenuItem value="">Tous</MenuItem>
+                      {difficultyLevels.map(level => (
+                        <MenuItem key={level} value={level}>
+                          {level}
+                        </MenuItem>
                       ))}
-                    </Box>
-                  )}
-                </CardContent>
+                    </Select>
+                  </FormControl>
 
-                <Box sx={{ p: 2, pt: 0 }}>
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    onClick={() => handleStartChallenge(challenge)}
-                  >
-                    Commencer
-                  </Button>
+                  <FormControl fullWidth>
+                    <InputLabel>Catégorie</InputLabel>
+                    <Select
+                      value={filters.category}
+                      onChange={handleCategoryChange}
+                      label="Catégorie"
+                    >
+                      <MenuItem value="">Toutes</MenuItem>
+                      {categories.map(category => (
+                        <MenuItem key={category} value={category}>
+                          {category}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                 </Box>
-              </Card>
+
+                <Box>
+                  <ToggleButtonGroup
+                    value={filters.sortBy}
+                    exclusive
+                    onChange={handleSortChange}
+                    aria-label="Tri"
+                  >
+                    <ToggleButton value="-createdAt" aria-label="Plus récents">
+                      Plus récents
+                    </ToggleButton>
+                    <ToggleButton value="difficulty" aria-label="Difficulté">
+                      Difficulté
+                    </ToggleButton>
+                    <ToggleButton value="-points" aria-label="Points">
+                      Points
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                </Box>
+              </Stack>
+            </Collapse>
+          </Stack>
+        </Paper>
+
+        {/* Challenges Grid */}
+        <Grid container spacing={3}>
+          {challenges.length === 0 ? (
+            <Grid item xs={12}>
+              <Paper sx={{ p: 3, textAlign: 'center' }}>
+                <Typography variant="h6" color="text.secondary">
+                  Aucun défi trouvé
+                </Typography>
+              </Paper>
             </Grid>
-          ))}
+          ) : (
+            challenges.map((challenge) => (
+              <Grid item xs={12} sm={6} md={4} key={challenge._id}>
+                <Card 
+                  sx={{ 
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    '&:hover': {
+                      boxShadow: 6,
+                      cursor: 'pointer'
+                    }
+                  }}
+                  onClick={() => handleOpenChallenge(challenge)}
+                >
+                  <CardContent sx={{ flexGrow: 1 }}>
+                    <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                      <Typography variant="h6" component="div" gutterBottom>
+                        {challenge.title}
+                      </Typography>
+                      {canManageChallenge(challenge) && (
+                        <Box>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditChallenge(challenge);
+                            }}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleConfirmDelete(challenge);
+                            }}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Box>
+                      )}
+                    </Box>
+
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        mb: 2
+                      }}
+                    >
+                      {challenge.description}
+                    </Typography>
+
+                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                      <Chip
+                        size="small"
+                        label={challenge.difficulty}
+                        color={
+                          challenge.difficulty === 'Facile' ? 'success' :
+                          challenge.difficulty === 'Moyen' ? 'warning' : 'error'
+                        }
+                      />
+                      <Chip
+                        size="small"
+                        label={challenge.category}
+                        variant="outlined"
+                      />
+                      {challenge.timeEstimate && (
+                        <Box display="flex" alignItems="center">
+                          <TimerIcon fontSize="small" sx={{ mr: 0.5 }} />
+                          <Typography variant="body2">
+                            {challenge.timeEstimate}
+                          </Typography>
+                        </Box>
+                      )}
+                      <Box display="flex" alignItems="center">
+                        <WorkspacePremiumIcon fontSize="small" sx={{ mr: 0.5 }} />
+                        <Typography variant="body2">
+                          {challenge.points} pts
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))
+          )}
         </Grid>
 
+        {/* Challenge Dialog */}
         <ChallengeDialog
           open={openDialog}
-          onClose={handleCloseDialog}
+          onClose={() => {
+            setOpenDialog(false);
+            setSelectedChallenge(null);
+          }}
+          onSubmit={selectedChallenge ? handleUpdateChallenge : handleCreateChallenge}
           challenge={selectedChallenge}
+          mode={selectedChallenge ? 'edit' : 'create'}
         />
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
+          <Box sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Confirmer la suppression
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 3 }}>
+              Êtes-vous sûr de vouloir supprimer le défi "{challengeToDelete?.title}" ?
+              Cette action est irréversible.
+            </Typography>
+            <Box display="flex" justifyContent="flex-end" gap={1}>
+              <Button onClick={() => setDeleteConfirmOpen(false)}>
+                Annuler
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={handleDeleteChallenge}
+              >
+                Supprimer
+              </Button>
+            </Box>
+          </Box>
+        </Dialog>
       </Container>
     </AnimatedPage>
   );

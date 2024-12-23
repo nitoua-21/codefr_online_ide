@@ -1,33 +1,31 @@
 const express = require('express');
-const router = express.Router();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const validateUser = require('../middleware/validateUser');
 const auth = require('../middleware/auth');
+const router = express.Router();
 
 // Get user information
 router.get('/', (req, res) => {
   res.json({ message: 'Get user information' });
 });
 
-// Register new user
-router.post('/register', validateUser, async (req, res) => {
+// Register user
+router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
     // Check if user already exists
-    const existingUser = await User.findOne({
-      $or: [{ email }, { username }]
-    });
-
-    if (existingUser) {
+    let user = await User.findOne({ email });
+    if (user) {
       return res.status(400).json({
         success: false,
-        error: existingUser.email === email ? 'Email already registered' : 'Username already taken'
+        error: 'User already exists'
       });
     }
 
     // Create new user
-    const user = new User({
+    user = new User({
       username,
       email,
       password
@@ -35,24 +33,21 @@ router.post('/register', validateUser, async (req, res) => {
 
     await user.save();
 
-    // Generate token
-    const token = user.generateAuthToken();
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
 
-    // Set cookie
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    });
-
-    // Return success without password
-    const userResponse = user.toObject();
-    delete userResponse.password;
-
+    // Return user data and token
     res.status(201).json({
       success: true,
-      message: 'User registered successfully',
-      user: userResponse,
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email
+      },
       token
     });
   } catch (error) {
@@ -69,16 +64,8 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate input
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        error: 'Please provide email and password'
-      });
-    }
-
-    // Find user
-    const user = await User.findOne({ email });
+    // Check if user exists
+    const user = await User.findOne({ email }).select('+password');
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -87,7 +74,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Check password
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({
         success: false,
@@ -95,28 +82,21 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Update last login
-    user.lastLogin = new Date();
-    await user.save();
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
 
-    // Generate token
-    const token = user.generateAuthToken();
-
-    // Set cookie
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    });
-
-    // Return user data without password
-    const userResponse = user.toObject();
-    delete userResponse.password;
-
+    // Return user data and token
     res.json({
       success: true,
-      message: 'Login successful',
-      user: userResponse,
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email
+      },
       token
     });
   } catch (error) {
@@ -131,15 +111,16 @@ router.post('/login', async (req, res) => {
 // Get current user
 router.get('/me', auth, async (req, res) => {
   try {
+    const user = await User.findById(req.user._id).select('-password');
     res.json({
       success: true,
-      user: req.user
+      user
     });
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({
       success: false,
-      error: 'Error getting user information'
+      error: 'Error getting user data'
     });
   }
 });
@@ -147,9 +128,6 @@ router.get('/me', auth, async (req, res) => {
 // Logout user
 router.post('/logout', auth, (req, res) => {
   try {
-    // Clear cookie
-    res.clearCookie('token');
-    
     res.json({
       success: true,
       message: 'Logged out successfully'

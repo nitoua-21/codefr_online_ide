@@ -6,19 +6,21 @@ const auth = require('../middleware/auth');
 // Create a new code snippet
 router.post('/', auth, async (req, res) => {
   try {
-    const { title, description, code, tags, isPublic } = req.body;
+    const { title, description, code, tags, isPublic, programmingLanguage, challenge } = req.body;
 
     const snippet = new CodeSnippet({
       title,
       description,
       code,
+      programmingLanguage: programmingLanguage || 'codefr',
       tags: tags || [],
       isPublic: isPublic || false,
-      author: req.user._id
+      author: req.user._id,
+      challenge: challenge || null,
+      isSolution: !!challenge
     });
 
     await snippet.save();
-
     await snippet.populate('author', 'username');
 
     res.status(201).json({
@@ -56,26 +58,23 @@ router.get('/public', async (req, res) => {
     }
 
     const snippets = await CodeSnippet.find(query)
-      .populate('author', 'username')
       .sort(sortBy)
       .skip((page - 1) * limit)
-      .limit(limit);
+      .limit(limit)
+      .populate('author', 'username')
+      .populate('challenge', 'title');
 
     const total = await CodeSnippet.countDocuments(query);
 
     res.json({
       success: true,
       snippets,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      }
+      total,
+      page,
+      pages: Math.ceil(total / limit)
     });
   } catch (error) {
-    console.error('Get public snippets error:', error);
-    res.status(500).json({
+    res.status(400).json({
       success: false,
       error: error.message
     });
@@ -85,29 +84,40 @@ router.get('/public', async (req, res) => {
 // Get user's snippets
 router.get('/my', auth, async (req, res) => {
   try {
+    console.log('Getting snippets for user:', req.user._id);
     const snippets = await CodeSnippet.find({ author: req.user._id })
+      .sort('-createdAt')
       .populate('author', 'username')
-      .sort('-createdAt');
+      .populate('challenge', 'title');
 
+    console.log('Found snippets:', snippets);
     res.json({
       success: true,
       snippets
     });
   } catch (error) {
-    console.error('Get user snippets error:', error);
-    res.status(500).json({
+    console.error('Error getting user snippets:', error);
+    res.status(400).json({
       success: false,
       error: error.message
     });
   }
 });
 
-// Get a specific snippet
+// Get a single snippet by ID
 router.get('/:id', async (req, res) => {
   try {
     const snippet = await CodeSnippet.findById(req.params.id)
       .populate('author', 'username')
-      .populate('forkedFrom', 'title author');
+      .populate('forkedFrom', 'title author')
+      .populate('challenge', 'title')
+      .populate({
+        path: 'comments',
+        populate: {
+          path: 'author',
+          select: 'username'
+        }
+      });
 
     if (!snippet) {
       return res.status(404).json({
@@ -116,21 +126,12 @@ router.get('/:id', async (req, res) => {
       });
     }
 
-    // Check if snippet is private and user is not the author
-    if (!snippet.isPublic && (!req.user || !req.user._id.equals(snippet.author._id))) {
-      return res.status(403).json({
-        success: false,
-        error: 'Access denied'
-      });
-    }
-
     res.json({
       success: true,
       snippet
     });
   } catch (error) {
-    console.error('Get snippet error:', error);
-    res.status(500).json({
+    res.status(400).json({
       success: false,
       error: error.message
     });
@@ -140,7 +141,10 @@ router.get('/:id', async (req, res) => {
 // Update a snippet
 router.put('/:id', auth, async (req, res) => {
   try {
-    const snippet = await CodeSnippet.findById(req.params.id);
+    const snippet = await CodeSnippet.findOne({
+      _id: req.params.id,
+      author: req.user._id
+    });
 
     if (!snippet) {
       return res.status(404).json({
@@ -149,21 +153,14 @@ router.put('/:id', auth, async (req, res) => {
       });
     }
 
-    // Check ownership
-    if (!snippet.author.equals(req.user._id)) {
-      return res.status(403).json({
-        success: false,
-        error: 'Not authorized to update this snippet'
-      });
-    }
-
-    const { title, description, code, tags, isPublic } = req.body;
+    const { title, description, code, tags, isPublic, programmingLanguage } = req.body;
 
     snippet.title = title || snippet.title;
     snippet.description = description || snippet.description;
     snippet.code = code || snippet.code;
     snippet.tags = tags || snippet.tags;
     snippet.isPublic = isPublic !== undefined ? isPublic : snippet.isPublic;
+    snippet.programmingLanguage = programmingLanguage || snippet.programmingLanguage;
 
     await snippet.save();
     await snippet.populate('author', 'username');
@@ -173,7 +170,6 @@ router.put('/:id', auth, async (req, res) => {
       snippet
     });
   } catch (error) {
-    console.error('Update snippet error:', error);
     res.status(400).json({
       success: false,
       error: error.message
@@ -184,7 +180,10 @@ router.put('/:id', auth, async (req, res) => {
 // Delete a snippet
 router.delete('/:id', auth, async (req, res) => {
   try {
-    const snippet = await CodeSnippet.findById(req.params.id);
+    const snippet = await CodeSnippet.findOneAndDelete({
+      _id: req.params.id,
+      author: req.user._id
+    });
 
     if (!snippet) {
       return res.status(404).json({
@@ -193,31 +192,20 @@ router.delete('/:id', auth, async (req, res) => {
       });
     }
 
-    // Check ownership
-    if (!snippet.author.equals(req.user._id)) {
-      return res.status(403).json({
-        success: false,
-        error: 'Not authorized to delete this snippet'
-      });
-    }
-
-    await snippet.remove();
-
     res.json({
       success: true,
       message: 'Snippet deleted successfully'
     });
   } catch (error) {
-    console.error('Delete snippet error:', error);
-    res.status(500).json({
+    res.status(400).json({
       success: false,
       error: error.message
     });
   }
 });
 
-// Star a snippet
-router.post('/:id/star', auth, async (req, res) => {
+// Like a snippet
+router.post('/:id/like', auth, async (req, res) => {
   try {
     const snippet = await CodeSnippet.findById(req.params.id);
 
@@ -228,27 +216,105 @@ router.post('/:id/star', auth, async (req, res) => {
       });
     }
 
-    // Check if user has already starred
-    const hasStarred = snippet.stars.includes(req.user._id);
-
-    if (hasStarred) {
-      // Remove star
-      snippet.stars = snippet.stars.filter(id => !id.equals(req.user._id));
+    const liked = snippet.likes.includes(req.user._id);
+    
+    if (liked) {
+      snippet.likes = snippet.likes.filter(id => !id.equals(req.user._id));
     } else {
-      // Add star
-      snippet.stars.push(req.user._id);
+      snippet.likes.push(req.user._id);
     }
 
     await snippet.save();
 
     res.json({
       success: true,
-      message: hasStarred ? 'Snippet unstarred' : 'Snippet starred',
-      starCount: snippet.stars.length
+      liked: !liked,
+      likeCount: snippet.likes.length
     });
   } catch (error) {
-    console.error('Star snippet error:', error);
-    res.status(500).json({
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Add a comment
+router.post('/:id/comments', auth, async (req, res) => {
+  try {
+    const snippet = await CodeSnippet.findById(req.params.id);
+
+    if (!snippet) {
+      return res.status(404).json({
+        success: false,
+        error: 'Snippet not found'
+      });
+    }
+
+    const comment = {
+      author: req.user._id,
+      content: req.body.content
+    };
+
+    snippet.comments.push(comment);
+    await snippet.save();
+
+    // Populate the new comment's author
+    const populatedSnippet = await CodeSnippet.findById(snippet._id)
+      .populate('comments.author', 'username');
+
+    const newComment = populatedSnippet.comments[populatedSnippet.comments.length - 1];
+
+    res.json({
+      success: true,
+      comment: newComment
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Delete a comment
+router.delete('/:id/comments/:commentId', auth, async (req, res) => {
+  try {
+    const snippet = await CodeSnippet.findById(req.params.id);
+
+    if (!snippet) {
+      return res.status(404).json({
+        success: false,
+        error: 'Snippet not found'
+      });
+    }
+
+    const comment = snippet.comments.id(req.params.commentId);
+
+    if (!comment) {
+      return res.status(404).json({
+        success: false,
+        error: 'Comment not found'
+      });
+    }
+
+    // Only allow comment author or snippet author to delete
+    if (!comment.author.equals(req.user._id) && !snippet.author.equals(req.user._id)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to delete this comment'
+      });
+    }
+
+    comment.remove();
+    await snippet.save();
+
+    res.json({
+      success: true,
+      message: 'Comment deleted successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
       success: false,
       error: error.message
     });
@@ -267,41 +333,31 @@ router.post('/:id/fork', auth, async (req, res) => {
       });
     }
 
-    // Check if snippet is public or user is the author
-    if (!originalSnippet.isPublic && !originalSnippet.author.equals(req.user._id)) {
-      return res.status(403).json({
-        success: false,
-        error: 'Cannot fork private snippets'
-      });
-    }
-
-    // Create new snippet as fork
     const forkedSnippet = new CodeSnippet({
       title: `${originalSnippet.title} (forked)`,
       description: originalSnippet.description,
       code: originalSnippet.code,
       tags: originalSnippet.tags,
+      programmingLanguage: originalSnippet.programmingLanguage,
       isPublic: false,
       author: req.user._id,
-      forkedFrom: originalSnippet._id
+      forkedFrom: originalSnippet._id,
+      challenge: originalSnippet.challenge,
+      isSolution: originalSnippet.isSolution
     });
 
     await forkedSnippet.save();
-
-    // Add fork reference to original snippet
     originalSnippet.forks.push(forkedSnippet._id);
     await originalSnippet.save();
 
     await forkedSnippet.populate('author', 'username');
-    await forkedSnippet.populate('forkedFrom', 'title author');
 
-    res.status(201).json({
+    res.json({
       success: true,
       snippet: forkedSnippet
     });
   } catch (error) {
-    console.error('Fork snippet error:', error);
-    res.status(500).json({
+    res.status(400).json({
       success: false,
       error: error.message
     });

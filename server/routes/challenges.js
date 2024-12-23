@@ -4,36 +4,101 @@ const Challenge = require('../models/Challenge');
 const Solution = require('../models/Solution');
 const auth = require('../middleware/auth');
 
+// Helper function to check if user can manage challenge
+const canManageChallenge = (user, challenge) => {
+  return user.role === 'admin' || challenge.author.toString() === user._id.toString();
+};
+
+// Get all challenges with filters
+router.get('/', async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      difficulty,
+      category,
+      search,
+      tag,
+      sortBy = '-createdAt',
+      author
+    } = req.query;
+
+    // Build query
+    const query = { isPublished: true };
+    
+    if (difficulty) query.difficulty = difficulty;
+    if (category) query.category = category;
+    if (tag) query.tags = tag;
+    if (author) query.author = author;
+    
+    if (search) {
+      query.$text = { $search: search };
+    }
+
+    // Build sort
+    const sort = {};
+    if (sortBy.startsWith('-')) {
+      sort[sortBy.substring(1)] = -1;
+    } else {
+      sort[sortBy] = 1;
+    }
+
+    const challenges = await Challenge.find(query)
+      .sort(sort)
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .populate('author', 'username');
+
+    const total = await Challenge.countDocuments(query);
+
+    res.json({
+      success: true,
+      challenges,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page
+    });
+  } catch (error) {
+    console.error('Get challenges error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error fetching challenges'
+    });
+  }
+});
+
+// Get a single challenge
+router.get('/:id', async (req, res) => {
+  try {
+    const challenge = await Challenge.findById(req.params.id)
+      .populate('author', 'username');
+
+    if (!challenge) {
+      return res.status(404).json({
+        success: false,
+        error: 'Challenge not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      challenge
+    });
+  } catch (error) {
+    console.error('Get challenge error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error fetching challenge'
+    });
+  }
+});
+
 // Create a new challenge
 router.post('/', auth, async (req, res) => {
   try {
-    const {
-      title,
-      description,
-      difficulty,
-      category,
-      initialCode,
-      testCases,
-      hints,
-      solution,
-      timeLimit,
-      memoryLimit,
-      tags
-    } = req.body;
-
     const challenge = new Challenge({
-      title,
-      description,
-      difficulty,
-      category,
-      initialCode,
-      testCases,
-      hints,
-      solution,
-      timeLimit,
-      memoryLimit,
-      tags,
-      author: req.user._id
+      ...req.body,
+      author: req.user._id,
+      isPublished: false // New challenges are unpublished by default
     });
 
     await challenge.save();
@@ -51,97 +116,7 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// Get all published challenges with filters
-router.get('/', async (req, res) => {
-  try {
-    const {
-      page = 1,
-      limit = 10,
-      difficulty,
-      category,
-      search,
-      tag,
-      sortBy = '-createdAt'
-    } = req.query;
-
-    const query = { status: 'published' };
-
-    if (difficulty) {
-      query.difficulty = difficulty;
-    }
-
-    if (category) {
-      query.category = category;
-    }
-
-    if (search) {
-      query.$text = { $search: search };
-    }
-
-    if (tag) {
-      query.tags = tag;
-    }
-
-    const challenges = await Challenge.find(query)
-      .populate('author', 'username')
-      .sort(sortBy)
-      .skip((page - 1) * limit)
-      .limit(limit);
-
-    const total = await Challenge.countDocuments(query);
-
-    res.json({
-      success: true,
-      challenges,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    });
-  } catch (error) {
-    console.error('Get challenges error:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-// Get challenge by ID
-router.get('/:id', async (req, res) => {
-  try {
-    const challenge = await Challenge.findById(req.params.id)
-      .populate('author', 'username');
-
-    if (!challenge) {
-      return res.status(404).json({
-        success: false,
-        error: 'Challenge not found'
-      });
-    }
-
-    // Hide solution and hidden test cases for non-authors
-    if (!req.user || !challenge.author._id.equals(req.user._id)) {
-      challenge.solution = undefined;
-      challenge.testCases = challenge.testCases.filter(test => !test.isHidden);
-    }
-
-    res.json({
-      success: true,
-      challenge
-    });
-  } catch (error) {
-    console.error('Get challenge error:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-// Update challenge
+// Update a challenge
 router.put('/:id', auth, async (req, res) => {
   try {
     const challenge = await Challenge.findById(req.params.id);
@@ -153,43 +128,16 @@ router.put('/:id', auth, async (req, res) => {
       });
     }
 
-    // Check ownership
-    if (!challenge.author.equals(req.user._id)) {
+    // Check if user can manage this challenge
+    if (!canManageChallenge(req.user, challenge)) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to update this challenge'
       });
     }
 
-    const {
-      title,
-      description,
-      difficulty,
-      category,
-      initialCode,
-      testCases,
-      hints,
-      solution,
-      timeLimit,
-      memoryLimit,
-      tags,
-      status
-    } = req.body;
-
-    // Update fields
-    if (title) challenge.title = title;
-    if (description) challenge.description = description;
-    if (difficulty) challenge.difficulty = difficulty;
-    if (category) challenge.category = category;
-    if (initialCode) challenge.initialCode = initialCode;
-    if (testCases) challenge.testCases = testCases;
-    if (hints) challenge.hints = hints;
-    if (solution) challenge.solution = solution;
-    if (timeLimit) challenge.timeLimit = timeLimit;
-    if (memoryLimit) challenge.memoryLimit = memoryLimit;
-    if (tags) challenge.tags = tags;
-    if (status) challenge.status = status;
-
+    // Update challenge
+    Object.assign(challenge, req.body);
     await challenge.save();
 
     res.json({
@@ -205,7 +153,7 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-// Delete challenge
+// Delete a challenge
 router.delete('/:id', auth, async (req, res) => {
   try {
     const challenge = await Challenge.findById(req.params.id);
@@ -217,8 +165,8 @@ router.delete('/:id', auth, async (req, res) => {
       });
     }
 
-    // Check ownership
-    if (!challenge.author.equals(req.user._id)) {
+    // Check if user can manage this challenge
+    if (!canManageChallenge(req.user, challenge)) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to delete this challenge'
@@ -235,7 +183,43 @@ router.delete('/:id', auth, async (req, res) => {
     console.error('Delete challenge error:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: 'Error deleting challenge'
+    });
+  }
+});
+
+// Publish/Unpublish a challenge
+router.patch('/:id/publish', auth, async (req, res) => {
+  try {
+    const challenge = await Challenge.findById(req.params.id);
+
+    if (!challenge) {
+      return res.status(404).json({
+        success: false,
+        error: 'Challenge not found'
+      });
+    }
+
+    // Check if user can manage this challenge
+    if (!canManageChallenge(req.user, challenge)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to publish/unpublish this challenge'
+      });
+    }
+
+    challenge.isPublished = !challenge.isPublished;
+    await challenge.save();
+
+    res.json({
+      success: true,
+      challenge
+    });
+  } catch (error) {
+    console.error('Publish challenge error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error publishing/unpublishing challenge'
     });
   }
 });
