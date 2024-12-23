@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -69,6 +69,12 @@ const ChallengesPage = () => {
   
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // Initial fetch
+  useEffect(() => {
+    console.log('ChallengesPage mounted, fetching challenges');
+    refreshChallenges();
+  }, [refreshChallenges]);
 
   // Check if user can edit/delete a challenge
   const canManageChallenge = useCallback((challenge) => {
@@ -284,12 +290,17 @@ const ChallengesPage = () => {
 
         {/* Challenges Grid */}
         <Grid container spacing={3}>
-          {challenges.length === 0 ? (
+          {!loading && challenges.length === 0 ? (
             <Grid item xs={12}>
               <Paper sx={{ p: 3, textAlign: 'center' }}>
                 <Typography variant="h6" color="text.secondary">
-                  Aucun défi trouvé
+                  {error ? 'Erreur lors du chargement des défis' : 'Aucun défi trouvé'}
                 </Typography>
+                {error && (
+                  <Typography color="text.secondary" sx={{ mt: 1 }}>
+                    {error}
+                  </Typography>
+                )}
               </Paper>
             </Grid>
           ) : (
@@ -300,87 +311,79 @@ const ChallengesPage = () => {
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
+                    position: 'relative',
                     '&:hover': {
-                      boxShadow: 6,
-                      cursor: 'pointer'
-                    }
+                      transform: 'translateY(-4px)',
+                      transition: 'transform 0.2s ease-in-out',
+                    },
                   }}
-                  onClick={() => handleOpenChallenge(challenge)}
                 >
                   <CardContent sx={{ flexGrow: 1 }}>
-                    <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                      <Typography variant="h6" component="div" gutterBottom>
-                        {challenge.title}
-                      </Typography>
-                      {canManageChallenge(challenge) && (
-                        <Box>
-                          <IconButton
-                            size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditChallenge(challenge);
-                            }}
-                          >
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleConfirmDelete(challenge);
-                            }}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Box>
-                      )}
-                    </Box>
-
-                    <Typography 
-                      variant="body2" 
-                      color="text.secondary"
-                      sx={{
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        mb: 2
-                      }}
-                    >
+                    <Typography variant="h6" component="h2" gutterBottom>
+                      {challenge.title}
+                    </Typography>
+                    
+                    <Typography color="text.secondary" paragraph>
                       {challenge.description}
                     </Typography>
 
-                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                    <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
                       <Chip
-                        size="small"
                         label={challenge.difficulty}
                         color={
                           challenge.difficulty === 'Facile' ? 'success' :
                           challenge.difficulty === 'Moyen' ? 'warning' : 'error'
                         }
+                        size="small"
                       />
                       <Chip
-                        size="small"
                         label={challenge.category}
                         variant="outlined"
+                        size="small"
                       />
-                      {challenge.timeEstimate && (
-                        <Box display="flex" alignItems="center">
-                          <TimerIcon fontSize="small" sx={{ mr: 0.5 }} />
-                          <Typography variant="body2">
-                            {challenge.timeEstimate}
-                          </Typography>
-                        </Box>
-                      )}
+                    </Stack>
+
+                    <Box display="flex" alignItems="center" gap={2}>
                       <Box display="flex" alignItems="center">
-                        <WorkspacePremiumIcon fontSize="small" sx={{ mr: 0.5 }} />
-                        <Typography variant="body2">
+                        <TimerIcon sx={{ mr: 0.5, fontSize: '1rem' }} />
+                        <Typography variant="body2" color="text.secondary">
+                          {challenge.timeLimit} min
+                        </Typography>
+                      </Box>
+                      <Box display="flex" alignItems="center">
+                        <WorkspacePremiumIcon sx={{ mr: 0.5, fontSize: '1rem' }} />
+                        <Typography variant="body2" color="text.secondary">
                           {challenge.points} pts
                         </Typography>
                       </Box>
-                    </Stack>
+                    </Box>
                   </CardContent>
+
+                  <Box sx={{ p: 2, pt: 0, display: 'flex', justifyContent: 'space-between' }}>
+                    <Button
+                      size="small"
+                      onClick={() => handleOpenChallenge(challenge)}
+                    >
+                      Commencer
+                    </Button>
+                    
+                    {canManageChallenge(challenge) && (
+                      <Box>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleEditChallenge(challenge)}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleConfirmDelete(challenge)}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    )}
+                  </Box>
                 </Card>
               </Grid>
             ))

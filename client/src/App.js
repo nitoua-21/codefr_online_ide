@@ -138,71 +138,71 @@ const ThemedApp = () => {
   return (
     <MuiThemeProvider theme={getTheme(mode)}>
       <CssBaseline />
-      <ChallengesProvider>
-        <div className="App">
-          <Navbar />
-          <AnimatePresence mode="wait">
-            <Routes location={location} key={location.pathname}>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route path="/editor" element={<EditorPage />} />
-              <Route path="/editor/:id" element={<EditorPage />} />
+      <AuthProvider>
+        <ChallengesProvider>
+          <div className="App">
+            <Navbar />
+            <AnimatePresence mode="wait">
+              <Routes location={location} key={location.pathname}>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+                <Route path="/editor" element={<EditorPage />} />
+                <Route path="/editor/:id" element={<EditorPage />} />
 
-              {/* Protected Routes */}
-              <Route path="/challenges" element={
-                <ProtectedRoute>
-                  <ChallengesPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/challenges/:id" element={
-                <ProtectedRoute>
-                  <ChallengeDetailsPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/community" element={
-                <ProtectedRoute>
-                  <CommunityPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/learn" element={
-                <ProtectedRoute>
-                  <LearnPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <DashboardPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              } />
-              <Route path="/settings" element={
-                <ProtectedRoute>
-                  <SettingsPage />
-                </ProtectedRoute>
-              } />
-            </Routes>
-          </AnimatePresence>
-        </div>
-      </ChallengesProvider>
+                {/* Protected Routes */}
+                <Route path="/challenges" element={
+                  <ProtectedRoute>
+                    <ChallengesPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/challenges/:id" element={
+                  <ProtectedRoute>
+                    <ChallengeDetailsPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/community" element={
+                  <ProtectedRoute>
+                    <CommunityPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/learn" element={
+                  <ProtectedRoute>
+                    <LearnPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                    <DashboardPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/profile" element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/settings" element={
+                  <ProtectedRoute>
+                    <SettingsPage />
+                  </ProtectedRoute>
+                } />
+              </Routes>
+            </AnimatePresence>
+          </div>
+        </ChallengesProvider>
+      </AuthProvider>
     </MuiThemeProvider>
   );
 };
 
-function App() {
+const App = () => {
   return (
-    <AuthProvider>
+    <Router>
       <ThemeProvider>
-        <Router>
-          <ThemedApp />
-        </Router>
+        <ThemedApp />
       </ThemeProvider>
-    </AuthProvider>
+    </Router>
   );
-}
+};
 
 export default App;

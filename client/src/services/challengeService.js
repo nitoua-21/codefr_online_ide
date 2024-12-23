@@ -1,5 +1,20 @@
 import api from './api';
 
+// Helper function to handle API errors
+const handleApiError = (error) => {
+  if (error.response) {
+    // The request was made and the server responded with a status code
+    // that falls out of the range of 2xx
+    throw error.response.data.error || 'Une erreur est survenue';
+  } else if (error.request) {
+    // The request was made but no response was received
+    throw 'Impossible de contacter le serveur';
+  } else {
+    // Something happened in setting up the request that triggered an Error
+    throw error.message || 'Une erreur est survenue';
+  }
+};
+
 const challengeService = {
   // Get all published challenges with filters
   getChallenges: async (page = 1, limit = 10, filters = {}) => {
@@ -10,8 +25,17 @@ const challengeService = {
       });
       return response.data;
     } catch (error) {
-      console.error('Get challenges error:', error);
-      throw error.response?.data?.error || 'Error fetching challenges';
+      throw handleApiError(error);
+    }
+  },
+
+  // Get a single challenge by ID
+  getChallenge: async (id) => {
+    try {
+      const response = await api.get(`/challenges/${id}`);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
     }
   },
 
@@ -21,8 +45,7 @@ const challengeService = {
       const response = await api.get(`/challenges/${id}`);
       return response.data;
     } catch (error) {
-      console.error('Get challenge error:', error);
-      throw error.response?.data?.error || 'Error fetching challenge';
+      throw handleApiError(error);
     }
   },
 
@@ -32,8 +55,7 @@ const challengeService = {
       const response = await api.post('/challenges', challengeData);
       return response.data;
     } catch (error) {
-      console.error('Create challenge error:', error);
-      throw error.response?.data?.error || 'Error creating challenge';
+      throw handleApiError(error);
     }
   },
 
@@ -43,8 +65,7 @@ const challengeService = {
       const response = await api.put(`/challenges/${id}`, challengeData);
       return response.data;
     } catch (error) {
-      console.error('Update challenge error:', error);
-      throw error.response?.data?.error || 'Error updating challenge';
+      throw handleApiError(error);
     }
   },
 
@@ -54,8 +75,7 @@ const challengeService = {
       const response = await api.delete(`/challenges/${id}`);
       return response.data;
     } catch (error) {
-      console.error('Delete challenge error:', error);
-      throw error.response?.data?.error || 'Error deleting challenge';
+      throw handleApiError(error);
     }
   },
 
@@ -65,8 +85,7 @@ const challengeService = {
       const response = await api.post(`/challenges/${challengeId}/solutions`, { code });
       return response.data;
     } catch (error) {
-      console.error('Submit solution error:', error);
-      throw error.response?.data?.error || 'Error submitting solution';
+      throw handleApiError(error);
     }
   },
 
@@ -76,8 +95,7 @@ const challengeService = {
       const response = await api.get(`/challenges/${challengeId}/solutions/my`);
       return response.data;
     } catch (error) {
-      console.error('Get my solutions error:', error);
-      throw error.response?.data?.error || 'Error fetching your solutions';
+      throw handleApiError(error);
     }
   },
 
@@ -87,8 +105,7 @@ const challengeService = {
       const response = await api.get(`/challenges/${challengeId}/solutions`);
       return response.data;
     } catch (error) {
-      console.error('Get all solutions error:', error);
-      throw error.response?.data?.error || 'Error fetching solutions';
+      throw handleApiError(error);
     }
   },
 
@@ -98,8 +115,7 @@ const challengeService = {
       const response = await api.get(`/solutions/${solutionId}`);
       return response.data;
     } catch (error) {
-      console.error('Get solution error:', error);
-      throw error.response?.data?.error || 'Error fetching solution';
+      throw handleApiError(error);
     }
   }
 };

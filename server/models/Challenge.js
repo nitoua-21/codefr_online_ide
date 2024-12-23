@@ -50,41 +50,39 @@ const challengeSchema = new mongoose.Schema({
   },
   timeLimit: {
     type: Number,
-    default: 300, // 5 minutes in seconds
-    min: 60,      // minimum 1 minute
-    max: 3600     // maximum 1 hour
-  },
-  memoryLimit: {
-    type: Number,
-    default: 128, // 128 MB
-    min: 16,      // minimum 16 MB
-    max: 512      // maximum 512 MB
+    required: true,
+    min: 1,
+    max: 60
   },
   points: {
     type: Number,
     required: true,
-    min: 0
-  },
-  author: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  isPublished: {
-    type: Boolean,
-    default: false
+    min: 1
   },
   tags: [{
     type: String,
     trim: true
   }],
-  submissions: {
-    type: Number,
-    default: 0
+  author: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
-  successfulSubmissions: {
-    type: Number,
-    default: 0
+  solutions: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Solution'
+  }],
+  isPublished: {
+    type: Boolean,
+    default: false
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
 }, {
   timestamps: true,
@@ -128,6 +126,4 @@ challengeSchema.index({
   createdAt: -1
 });
 
-const Challenge = mongoose.model('Challenge', challengeSchema);
-
-module.exports = Challenge;
+module.exports = mongoose.model('Challenge', challengeSchema);

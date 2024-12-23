@@ -23,76 +23,88 @@ export const ChallengesProvider = ({ children }) => {
 
   // Fetch challenges with current filters
   const fetchChallenges = useCallback(async () => {
+    console.log("Fetching challenges");
     try {
       setLoading(true);
       setError(null);
-      const { challenges: fetchedChallenges } = await challengeService.getChallenges(
+      const response = await challengeService.getChallenges(
         filters.page,
         filters.limit,
         filters
       );
-      setChallenges(fetchedChallenges);
+      console.log("Response--->", response)
+      setChallenges(response.challenges || []);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Error fetching challenges');
       console.error('Error fetching challenges:', err);
+      setChallenges([]);
     } finally {
       setLoading(false);
     }
   }, [filters]);
 
-  // Initial fetch
-  useEffect(() => {
-    fetchChallenges();
-  }, [fetchChallenges]);
-
   // Create a new challenge
-  const createChallenge = async (challengeData) => {
+  const createChallenge = useCallback(async (challengeData) => {
     try {
       const { challenge } = await challengeService.createChallenge({
         ...challengeData,
         author: user._id
       });
-      setChallenges(prev => [challenge, ...prev]);
       return challenge;
     } catch (err) {
-      throw err;
+      console.error('Create challenge error:', err);
+      throw err.response?.data?.error || 'Error creating challenge';
     }
-  };
+  }, [user?._id]);
 
   // Update a challenge
-  const updateChallenge = async (id, challengeData) => {
+  const updateChallenge = useCallback(async (id, challengeData) => {
     try {
       const { challenge } = await challengeService.updateChallenge(id, challengeData);
-      setChallenges(prev =>
-        prev.map(ch => ch._id === id ? challenge : ch)
-      );
       return challenge;
     } catch (err) {
-      throw err;
+      console.error('Update challenge error:', err);
+      throw err.response?.data?.error || 'Error updating challenge';
     }
-  };
+  }, []);
 
   // Delete a challenge
-  const deleteChallenge = async (id) => {
+  const deleteChallenge = useCallback(async (id) => {
     try {
       await challengeService.deleteChallenge(id);
-      setChallenges(prev => prev.filter(ch => ch._id !== id));
     } catch (err) {
-      throw err;
+      console.error('Delete challenge error:', err);
+      throw err.response?.data?.error || 'Error deleting challenge';
     }
-  };
+  }, []);
+
+  // Get a single challenge
+  const getChallenge = useCallback(async (id) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await challengeService.getChallenge(id);
+      return response.challenge;
+    } catch (err) {
+      setError(err.message || 'Error fetching challenge');
+      console.error('Error fetching challenge:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   // Update filters
-  const updateFilters = (newFilters) => {
+  const updateFilters = useCallback((newFilters) => {
     setFilters(prev => ({
       ...prev,
       ...newFilters,
-      page: newFilters.page || 1 // Reset page when filters change
+      page: newFilters.hasOwnProperty('page') ? newFilters.page : 1 // Reset page when filters change unless page is specified
     }));
-  };
+  }, []);
 
   // Reset filters
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setFilters({
       page: 1,
       limit: 10,
@@ -103,7 +115,18 @@ export const ChallengesProvider = ({ children }) => {
       sortBy: '-createdAt',
       author: ''
     });
-  };
+  }, []);
+
+  // Refresh challenges
+  const refreshChallenges = useCallback(() => {
+    fetchChallenges();
+  }, [fetchChallenges]);
+
+  // Initial fetch
+  useEffect(() => {
+    console.log("Initial fetch effect running");
+    fetchChallenges();
+  }, []); // Empty dependency array for initial fetch
 
   const value = {
     challenges,
@@ -115,7 +138,8 @@ export const ChallengesProvider = ({ children }) => {
     deleteChallenge,
     updateFilters,
     resetFilters,
-    refreshChallenges: fetchChallenges
+    refreshChallenges,
+    getChallenge
   };
 
   return (
