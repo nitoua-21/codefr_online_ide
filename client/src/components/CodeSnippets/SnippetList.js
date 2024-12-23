@@ -31,7 +31,7 @@ const SnippetCard = ({ snippet, onDelete }) => {
   };
 
   const handleView = () => {
-    navigate(`/snippets/${snippet._id}`);
+    navigate('/editor', { state: { snippetId: snippet._id } });
   };
 
   const formatDate = (date) => {

@@ -13,7 +13,7 @@ const codeSnippetService = {
   },
 
   // Get a specific snippet by ID
-  getSnippet: async (id) => {
+  getSnippetById: async (id) => {
     try {
       const response = await api.get(`/code-snippets/${id}`);
       return response.data;
@@ -21,6 +21,11 @@ const codeSnippetService = {
       console.error('Get snippet error:', error);
       throw error.response?.data?.error || 'Error getting snippet';
     }
+  },
+
+  // Alias for getSnippetById for backward compatibility
+  getSnippet: async (id) => {
+    return codeSnippetService.getSnippetById(id);
   },
 
   // Get all snippets for the current user

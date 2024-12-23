@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Link as RouterLink, useParams, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   Container,
   Box,
@@ -13,15 +13,12 @@ import {
   Snackbar,
   TextField,
   CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Chip,
   Stack,
   FormControlLabel,
   Switch,
   Autocomplete,
+  Divider,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -40,7 +37,8 @@ import executionService from '../services/executionService';
 import codeSnippetService from '../services/codeSnippetService';
 
 const DEFAULT_CODE = `Algorithme ExempleSimple
-Variable x, y: Entier
+Variable x: Entier
+Variable y: Entier
 Debut
     x = 10
     y = 5
@@ -50,128 +48,15 @@ Debut
     Sinon
         Ecrire("y est plus grand ou égal à x")
     FinSi
-Fin
-`;
-
-const SaveDialog = ({ open, onClose, onSave, snippet }) => {
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    tags: [],
-    isPublic: false,
-  });
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (snippet) {
-      setFormData({
-        title: snippet.title || '',
-        description: snippet.description || '',
-        tags: snippet.tags || [],
-        isPublic: snippet.isPublic || false,
-      });
-    }
-  }, [snippet]);
-
-  const handleChange = (e) => {
-    const { name, value, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'isPublic' ? checked : value
-    }));
-  };
-
-  const handleSubmit = () => {
-    if (!formData.title) {
-      setError('Le titre est requis');
-      return;
-    }
-    onSave(formData);
-  };
-
-  return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        {snippet ? 'Modifier le snippet' : 'Sauvegarder le snippet'}
-      </DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
-          {error && (
-            <Alert severity="error" onClose={() => setError('')}>
-              {error}
-            </Alert>
-          )}
-          <TextField
-            name="title"
-            label="Titre"
-            value={formData.title}
-            onChange={handleChange}
-            fullWidth
-            required
-          />
-          <TextField
-            name="description"
-            label="Description"
-            value={formData.description}
-            onChange={handleChange}
-            fullWidth
-            multiline
-            rows={3}
-          />
-          <Autocomplete
-            multiple
-            freeSolo
-            options={[]}
-            value={formData.tags}
-            onChange={(event, newValue) => {
-              setFormData(prev => ({
-                ...prev,
-                tags: newValue || []
-              }));
-            }}
-            renderTags={(value, getTagProps) =>
-              value.map((option, index) => (
-                <Chip
-                  label={option}
-                  {...getTagProps({ index })}
-                  key={index}
-                />
-              ))
-            }
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Tags"
-                placeholder="Ajouter des tags"
-              />
-            )}
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                name="isPublic"
-                checked={formData.isPublic}
-                onChange={handleChange}
-              />
-            }
-            label="Rendre public"
-          />
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Annuler</Button>
-        <Button onClick={handleSubmit} variant="contained">
-          Sauvegarder
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-};
+Fin`;
 
 const EditorPage = () => {
   const { isAuthenticated, user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const snippetId = id || location.state?.snippetId;
+  
   const [code, setCode] = useState(DEFAULT_CODE);
   const [input, setInput] = useState('');
   const [output, setOutput] = useState('');
@@ -179,18 +64,28 @@ const EditorPage = () => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [showAuthBanner, setShowAuthBanner] = useState(!isAuthenticated);
   const [showFeatureAlert, setShowFeatureAlert] = useState(false);
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-  const [currentSnippet, setCurrentSnippet] = useState(null);
   const [isStarred, setIsStarred] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [snippetData, setSnippetData] = useState({
+    title: '',
+    description: '',
+    tags: [],
+    isPublic: false,
+  });
+  const [validationError, setValidationError] = useState('');
 
   useEffect(() => {
     const loadSnippet = async () => {
-      if (id) {
+      if (snippetId) {
         try {
-          const { snippet } = await codeSnippetService.getSnippetById(id);
+          const { snippet } = await codeSnippetService.getSnippetById(snippetId);
           setCode(snippet.code);
-          setCurrentSnippet(snippet);
+          setSnippetData({
+            title: snippet.title || '',
+            description: snippet.description || '',
+            tags: snippet.tags || [],
+            isPublic: snippet.isPublic || false,
+          });
           setIsStarred(snippet.stars.includes(user?._id));
         } catch (err) {
           setError('Erreur lors du chargement du snippet');
@@ -199,10 +94,10 @@ const EditorPage = () => {
       }
     };
 
-    if (id) {
+    if (snippetId) {
       loadSnippet();
     }
-  }, [id, user?._id]);
+  }, [snippetId, user?._id]);
 
   const handleRunCode = async () => {
     try {
@@ -225,79 +120,64 @@ const EditorPage = () => {
     }
   };
 
-  const handleSaveCode = () => {
+  const handleSaveCode = async () => {
     if (!isAuthenticated) {
       setShowFeatureAlert(true);
       return;
     }
-    setSaveDialogOpen(true);
-  };
 
-  const handleSaveSubmit = async (formData) => {
     try {
-      const snippetData = {
-        ...formData,
+      setValidationError('');
+
+      if (!snippetData.title) {
+        setValidationError('Le titre est requis');
+        return;
+      }
+
+      const data = {
+        ...snippetData,
         code,
         programmingLanguage: 'codefr'
       };
 
-      if (currentSnippet) {
-        await codeSnippetService.updateSnippet(currentSnippet._id, snippetData);
+      if (snippetId) {
+        await codeSnippetService.updateSnippet(snippetId, data);
         setSuccessMessage('Snippet mis à jour avec succès');
       } else {
-        const { snippet } = await codeSnippetService.createSnippet(snippetData);
-        setCurrentSnippet(snippet);
+        const { snippet } = await codeSnippetService.createSnippet(data);
         navigate(`/editor/${snippet._id}`);
         setSuccessMessage('Snippet créé avec succès');
       }
-      setSaveDialogOpen(false);
     } catch (err) {
       setError(err.message || 'Erreur lors de la sauvegarde');
-      console.error('Save snippet error:', err);
+      console.error('Save error:', err);
     }
   };
 
-  const handleShareCode = () => {
-    if (!currentSnippet?.isPublic) {
-      setError('Le snippet doit être public pour être partagé');
-      return;
-    }
-    
-    const url = `${window.location.origin}/editor/${currentSnippet._id}`;
-    navigator.clipboard.writeText(url);
-    setSuccessMessage('Lien copié dans le presse-papier');
-  };
-
-  const handleStar = async () => {
+  const handleStarSnippet = async () => {
     if (!isAuthenticated) {
       setShowFeatureAlert(true);
       return;
     }
 
     try {
-      if (isStarred) {
-        await codeSnippetService.unstarSnippet(currentSnippet._id);
-        setIsStarred(false);
-        setSuccessMessage('Snippet retiré des favoris');
-      } else {
-        await codeSnippetService.starSnippet(currentSnippet._id);
-        setIsStarred(true);
-        setSuccessMessage('Snippet ajouté aux favoris');
-      }
+      await codeSnippetService.toggleStar(snippetId);
+      setIsStarred(!isStarred);
+      setSuccessMessage(isStarred ? 'Snippet retiré des favoris' : 'Snippet ajouté aux favoris');
     } catch (err) {
-      setError(err.message || 'Erreur lors de l\'action');
-      console.error('Star/unstar error:', err);
+      setError(err.message || 'Erreur lors de l\'ajout/retrait des favoris');
+      console.error('Star error:', err);
     }
   };
 
-  const handleFork = async () => {
+  const handleForkSnippet = async () => {
     if (!isAuthenticated) {
       setShowFeatureAlert(true);
       return;
     }
 
     try {
-      const { snippet } = await codeSnippetService.forkSnippet(currentSnippet._id);
+      const { snippet } = await codeSnippetService.forkSnippet(snippetId);
       navigate(`/editor/${snippet._id}`);
       setSuccessMessage('Snippet forké avec succès');
     } catch (err) {
@@ -306,186 +186,264 @@ const EditorPage = () => {
     }
   };
 
+  const handleShareSnippet = () => {
+    if (snippetId) {
+      navigator.clipboard.writeText(window.location.href);
+      setSuccessMessage('Lien copié dans le presse-papier');
+    }
+  };
+
   return (
     <AnimatedPage>
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        {/* Auth Banner */}
-        <Collapse in={showAuthBanner}>
-          <Alert
-            severity="info"
-            action={
-              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                <IconButton
-                  color="inherit"
-                  size="small"
-                  onClick={() => setShowAuthBanner(false)}
-                >
-                  <CloseIcon fontSize="inherit" />
-                </IconButton>
+      <Container maxWidth="xl">
+        <Box sx={{ py: 3 }}>
+          {/* Auth Banner */}
+          <Collapse in={showAuthBanner}>
+            <Alert
+              severity="info"
+              action={
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    component={RouterLink}
+                    to="/login"
+                    size="small"
+                    startIcon={<LoginIcon />}
+                  >
+                    Se connecter
+                  </Button>
+                  <IconButton
+                    size="small"
+                    onClick={() => setShowAuthBanner(false)}
+                  >
+                    <CloseIcon fontSize="inherit" />
+                  </IconButton>
+                </Stack>
+              }
+            >
+              Connectez-vous pour sauvegarder vos snippets et accéder à plus de fonctionnalités !
+            </Alert>
+          </Collapse>
+
+          {/* Snippet Info Section */}
+          <Paper sx={{ p: 2, mb: 2 }}>
+            <Stack spacing={2}>
+              {validationError && (
+                <Alert severity="error" onClose={() => setValidationError('')}>
+                  {validationError}
+                </Alert>
+              )}
+
+              {snippetId && (
+                <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                  ID: {snippetId}
+                </Typography>
+              )}
+              
+              <TextField
+                label="Titre"
+                value={snippetData.title}
+                onChange={(e) => setSnippetData(prev => ({ ...prev, title: e.target.value }))}
+                fullWidth
+                required
+                disabled={!isAuthenticated}
+              />
+              
+              <TextField
+                label="Description"
+                value={snippetData.description}
+                onChange={(e) => setSnippetData(prev => ({ ...prev, description: e.target.value }))}
+                fullWidth
+                multiline
+                rows={2}
+                disabled={!isAuthenticated}
+              />
+              
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                <Autocomplete
+                  multiple
+                  freeSolo
+                  options={[]}
+                  value={snippetData.tags}
+                  onChange={(event, newValue) => {
+                    setSnippetData(prev => ({ ...prev, tags: newValue }));
+                  }}
+                  renderTags={(value, getTagProps) =>
+                    value.map((option, index) => (
+                      <Chip
+                        label={option}
+                        {...getTagProps({ index })}
+                        key={index}
+                      />
+                    ))
+                  }
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Tags"
+                      placeholder="Ajouter des tags"
+                    />
+                  )}
+                  sx={{ flex: 1 }}
+                  disabled={!isAuthenticated}
+                />
+                
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={snippetData.isPublic}
+                      onChange={(e) => setSnippetData(prev => ({ ...prev, isPublic: e.target.checked }))}
+                      disabled={!isAuthenticated}
+                    />
+                  }
+                  label="Public"
+                />
               </Box>
-            }
-            sx={{ mb: 2 }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Typography>
-                Connectez-vous pour sauvegarder et partager votre code
-              </Typography>
-              <Button
-                component={RouterLink}
-                to="/login"
-                variant="outlined"
-                size="small"
-                startIcon={<LoginIcon />}
-              >
-                Se connecter
-              </Button>
+            </Stack>
+          </Paper>
+
+          {/* Editor Section */}
+          <Paper sx={{ mb: 2 }}>
+            <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<RunIcon />}
+                  onClick={handleRunCode}
+                  disabled={isExecuting}
+                >
+                  Exécuter
+                </Button>
+
+                <Button
+                  variant="outlined"
+                  startIcon={<SaveIcon />}
+                  onClick={handleSaveCode}
+                  disabled={!isAuthenticated}
+                >
+                  Sauvegarder
+                </Button>
+
+                {snippetId && (
+                  <>
+                    <Button
+                      variant="outlined"
+                      startIcon={isStarred ? <StarIcon /> : <StarBorderIcon />}
+                      onClick={handleStarSnippet}
+                      disabled={!isAuthenticated}
+                    >
+                      {isStarred ? 'Retiré des favoris' : 'Ajouter aux favoris'}
+                    </Button>
+
+                    <Button
+                      variant="outlined"
+                      startIcon={<ForkIcon />}
+                      onClick={handleForkSnippet}
+                      disabled={!isAuthenticated}
+                    >
+                      Forker
+                    </Button>
+
+                    <Button
+                      variant="outlined"
+                      startIcon={<ShareIcon />}
+                      onClick={handleShareSnippet}
+                    >
+                      Partager
+                    </Button>
+                  </>
+                )}
+              </Stack>
             </Box>
-          </Alert>
-        </Collapse>
 
-        {/* Editor Header */}
-        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h5" component="h1">
-            {currentSnippet?.title || 'Éditeur CodeFr'}
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            {currentSnippet && (
-              <>
-                <IconButton
-                  color={isStarred ? 'warning' : 'default'}
-                  onClick={handleStar}
-                  title={isStarred ? 'Retirer des favoris' : 'Ajouter aux favoris'}
-                >
-                  {isStarred ? <StarIcon /> : <StarBorderIcon />}
-                </IconButton>
-                <IconButton
-                  onClick={handleFork}
-                  title="Forker ce snippet"
-                >
-                  <ForkIcon />
-                </IconButton>
-              </>
-            )}
-            <Button
-              variant="outlined"
-              startIcon={<ShareIcon />}
-              onClick={handleShareCode}
-              disabled={!currentSnippet?.isPublic}
-            >
-              Partager
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<SaveIcon />}
-              onClick={handleSaveCode}
-            >
-              Sauvegarder
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<RunIcon />}
-              onClick={handleRunCode}
-              disabled={isExecuting}
-            >
-              Exécuter
-            </Button>
-          </Box>
-        </Box>
-
-        {/* Main Content */}
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          {/* Editor */}
-          <Box sx={{ flex: 2 }}>
-            <Paper sx={{ mb: 2 }}>
+            <Box sx={{ height: '60vh' }}>
               <MonacoEditor
                 value={code}
                 onChange={setCode}
                 language="codefr"
-                height="60vh"
               />
-            </Paper>
-          </Box>
+            </Box>
+          </Paper>
 
-          {/* Input/Output */}
-          <Box sx={{ flex: 1 }}>
-            <Paper sx={{ p: 2, mb: 2 }}>
+          {/* Input/Output Section */}
+          <Stack direction="row" spacing={2}>
+            <Paper sx={{ flex: 1, p: 2 }}>
               <Typography variant="h6" gutterBottom>
                 Entrée
               </Typography>
               <TextField
-                fullWidth
                 multiline
                 rows={4}
+                fullWidth
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Entrez les données d'entrée ici..."
               />
             </Paper>
 
-            <Paper sx={{ p: 2 }}>
+            <Paper sx={{ flex: 1, p: 2 }}>
               <Typography variant="h6" gutterBottom>
                 Sortie
               </Typography>
               <Box
                 sx={{
-                  bgcolor: 'background.default',
+                  bgcolor: 'grey.100',
                   p: 2,
                   borderRadius: 1,
-                  minHeight: '200px',
-                  maxHeight: '400px',
+                  minHeight: '120px',
+                  maxHeight: '200px',
                   overflow: 'auto',
                   fontFamily: 'monospace',
-                  whiteSpace: 'pre-wrap',
-                  position: 'relative',
+                  position: 'relative'
                 }}
               >
-                {isExecuting ? (
+                {isExecuting && (
                   <Box
                     sx={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: '100%',
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)'
                     }}
                   >
                     <CircularProgress size={24} />
                   </Box>
-                ) : error ? (
-                  <Typography color="error.main">{error}</Typography>
+                )}
+                {error ? (
+                  <Typography color="error">{error}</Typography>
                 ) : (
-                  output || 'La sortie s\'affichera ici...'
+                  <pre style={{ margin: 0 }}>{output}</pre>
                 )}
               </Box>
             </Paper>
-          </Box>
+          </Stack>
         </Box>
 
-        {/* Dialogs and Alerts */}
-        <SaveDialog
-          open={saveDialogOpen}
-          onClose={() => setSaveDialogOpen(false)}
-          onSave={handleSaveSubmit}
-          snippet={currentSnippet}
-        />
+        {/* Feature Alert */}
+        <Snackbar
+          open={showFeatureAlert}
+          autoHideDuration={6000}
+          onClose={() => setShowFeatureAlert(false)}
+        >
+          <Alert
+            severity="warning"
+            onClose={() => setShowFeatureAlert(false)}
+          >
+            Vous devez être connecté pour utiliser cette fonctionnalité
+          </Alert>
+        </Snackbar>
 
+        {/* Success Message */}
         <Snackbar
           open={!!successMessage}
           autoHideDuration={3000}
           onClose={() => setSuccessMessage('')}
-          message={successMessage}
-        />
-
-        <Snackbar
-          open={showFeatureAlert}
-          autoHideDuration={3000}
-          onClose={() => setShowFeatureAlert(false)}
         >
           <Alert
-            onClose={() => setShowFeatureAlert(false)}
-            severity="warning"
-            sx={{ width: '100%' }}
+            severity="success"
+            onClose={() => setSuccessMessage('')}
           >
-            Vous devez être connecté pour utiliser cette fonctionnalité
+            {successMessage}
           </Alert>
         </Snackbar>
       </Container>

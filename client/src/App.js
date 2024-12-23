@@ -147,6 +147,7 @@ const ThemedApp = () => {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/editor" element={<EditorPage />} />
+              <Route path="/editor/:id" element={<EditorPage />} />
 
               {/* Protected Routes */}
               <Route path="/challenges" element={
