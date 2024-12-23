@@ -366,86 +366,77 @@ const EditorPage = () => {
           </Paper>
 
           {/* Input/Output Section */}
-          <Stack direction="row" spacing={2}>
-            <Paper sx={{ flex: 1, p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Entrée
-              </Typography>
-              <TextField
-                multiline
-                rows={4}
-                fullWidth
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Entrez les données d'entrée ici..."
-              />
-            </Paper>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              Sortie
+            </Typography>
+            <Box
+              sx={(theme) => ({
+                bgcolor: theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100',
+                p: 2,
+                borderRadius: 1,
+                minHeight: '120px',
+                maxHeight: '200px',
+                overflow: 'auto',
+                fontFamily: 'monospace',
+                position: 'relative',
+                border: `1px solid ${theme.palette.divider}`,
+                color: theme.palette.text.primary,
+              })}
+            >
+              {isExecuting && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    bgcolor: 'background.paper',
+                    p: 1,
+                    borderRadius: '50%',
+                  }}
+                >
+                  <CircularProgress size={24} />
+                </Box>
+              )}
+              {error ? (
+                <Typography color="error">{error}</Typography>
+              ) : (
+                <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                  {output || 'La sortie s\'affichera ici...'}
+                </pre>
+              )}
+            </Box>
+          </Paper>
 
-            <Paper sx={{ flex: 1, p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Sortie
-              </Typography>
-              <Box
-                sx={{
-                  bgcolor: 'grey.100',
-                  p: 2,
-                  borderRadius: 1,
-                  minHeight: '120px',
-                  maxHeight: '200px',
-                  overflow: 'auto',
-                  fontFamily: 'monospace',
-                  position: 'relative'
-                }}
-              >
-                {isExecuting && (
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)'
-                    }}
-                  >
-                    <CircularProgress size={24} />
-                  </Box>
-                )}
-                {error ? (
-                  <Typography color="error">{error}</Typography>
-                ) : (
-                  <pre style={{ margin: 0 }}>{output}</pre>
-                )}
-              </Box>
-            </Paper>
-          </Stack>
-        </Box>
-
-        {/* Feature Alert */}
-        <Snackbar
-          open={showFeatureAlert}
-          autoHideDuration={6000}
-          onClose={() => setShowFeatureAlert(false)}
-        >
-          <Alert
-            severity="warning"
+          {/* Feature Alert */}
+          <Snackbar
+            open={showFeatureAlert}
+            autoHideDuration={6000}
             onClose={() => setShowFeatureAlert(false)}
           >
-            Vous devez être connecté pour utiliser cette fonctionnalité
-          </Alert>
-        </Snackbar>
+            <Alert
+              severity="warning"
+              onClose={() => setShowFeatureAlert(false)}
+            >
+              Vous devez être connecté pour utiliser cette fonctionnalité
+            </Alert>
+          </Snackbar>
 
-        {/* Success Message */}
-        <Snackbar
-          open={!!successMessage}
-          autoHideDuration={3000}
-          onClose={() => setSuccessMessage('')}
-        >
-          <Alert
-            severity="success"
+          {/* Success Message */}
+          <Snackbar
+            open={!!successMessage}
+            autoHideDuration={3000}
             onClose={() => setSuccessMessage('')}
           >
-            {successMessage}
-          </Alert>
-        </Snackbar>
+            <Alert
+              severity="success"
+              onClose={() => setSuccessMessage('')}
+            >
+              {successMessage}
+            </Alert>
+          </Snackbar>
+        </Box>
       </Container>
     </AnimatedPage>
   );
