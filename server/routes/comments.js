@@ -71,7 +71,7 @@ router.delete('/challenges/:challengeId/comments/:commentId', auth, async (req, 
       return res.status(403).json({ error: 'Not authorized to delete this comment' });
     }
 
-    await comment.remove();
+    await Comment.deleteOne({ _id: req.params.commentId });
     res.json({ message: 'Comment deleted successfully' });
   } catch (error) {
     console.error('Delete comment error:', error);
