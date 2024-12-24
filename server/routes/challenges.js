@@ -79,8 +79,8 @@ router.get('/:id', async (req, res) => {
     const latestSolutions = await Solution.find({ challenge: challenge._id })
       .sort('-createdAt')
       .limit(5)
-      .populate('author', 'username')
-      .select('author status createdAt');
+      .populate('user', 'username')
+      .select('author status createdAt code');
 
     // Get latest comments
     const latestComments = await Comment.find({ challenge: challenge._id })
@@ -182,7 +182,7 @@ router.post('/:id/solutions', auth, async (req, res) => {
       challenge: challenge._id,
       author: req.user._id,
       code: req.body.code,
-      language: req.body.language || 'javascript'
+      language: req.body.language || 'codefr'
     });
 
     await solution.save();

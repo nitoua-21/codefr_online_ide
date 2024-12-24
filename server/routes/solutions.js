@@ -124,8 +124,9 @@ router.post('/challenge/:challengeId', auth, async (req, res) => {
 
     await solution.save();
 
+    
     // Execute test cases
-    const testResults = [];
+    /*const testResults = [];
     let passedTests = 0;
     let totalTime = 0;
     let maxMemory = 0;
@@ -171,9 +172,10 @@ router.post('/challenge/:challengeId', auth, async (req, res) => {
     solution.status = passedTests === challenge.testCases.length ? 'accepted' : 'wrong_answer';
 
     await solution.save();
-
+    */
     // Update challenge statistics
-    challenge.statistics.totalAttempts++;
+    //challenge.statistics.totalAttempts++;
+    /*
     if (solution.status === 'accepted') {
       challenge.statistics.successfulAttempts++;
     }
@@ -182,7 +184,7 @@ router.post('/challenge/:challengeId', auth, async (req, res) => {
       challenge.statistics.totalAttempts
     );
     await challenge.save();
-
+    */
     res.json({
       success: true,
       solution

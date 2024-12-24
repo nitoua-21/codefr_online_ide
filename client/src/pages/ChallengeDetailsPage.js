@@ -42,7 +42,7 @@ import { useChallenges } from '../contexts/ChallengesContext';
 import { useAuth } from '../contexts/AuthContext';
 import challengeService from '../services/challengeService';
 import AnimatedPage from '../components/AnimatedPage';
-import MonacoEditor from '@monaco-editor/react';
+import MonacoEditor from '../components/CodeEditor/MonacoEditor';
 
 const TabPanel = ({ children, value, index, ...other }) => (
   <div
@@ -68,6 +68,8 @@ const ChallengeDetailsPage = () => {
   const [totalCommentsPages, setTotalCommentsPages] = useState(1);
   const [commentContent, setCommentContent] = useState('');
   const [loadingComments, setLoadingComments] = useState(false);
+  const [solutionCode, setSolutionCode] = useState('');
+  const [submittingSolution, setSubmittingSolution] = useState(false);
 
   useEffect(() => {
     const fetchChallenge = async () => {
@@ -81,6 +83,12 @@ const ChallengeDetailsPage = () => {
 
     fetchChallenge();
   }, [id, getChallenge]);
+
+  useEffect(() => {
+    if (challenge) {
+      setSolutionCode(challenge.initialCode || '');
+    }
+  }, [challenge]);
 
   const canManageChallenge = () => {
     if (!user || !challenge) return false;
@@ -103,7 +111,7 @@ const ChallengeDetailsPage = () => {
     try {
       setLoadingComments(true);
       const data = await challengeService.getComments(id, commentsPage);
-      setComments(prevComments => 
+      setComments(prevComments =>
         commentsPage === 1 ? data.comments : [...prevComments, ...data.comments]
       );
       setTotalCommentsPages(data.totalPages);
@@ -143,6 +151,22 @@ const ChallengeDetailsPage = () => {
       setComments(prevComments => prevComments.filter(comment => comment._id !== commentId));
     } catch (error) {
       console.error('Error deleting comment:', error);
+    }
+  };
+
+  const handleSolutionSubmit = async () => {
+    if (!solutionCode.trim()) return;
+
+    try {
+      setSubmittingSolution(true);
+      await challengeService.submitSolution(id, solutionCode);
+      // Refresh challenge data to get updated solutions
+      const updatedChallenge = await getChallenge(id);
+      setChallenge(updatedChallenge);
+    } catch (error) {
+      console.error('Error submitting solution:', error);
+    } finally {
+      setSubmittingSolution(false);
     }
   };
 
@@ -218,7 +242,7 @@ const ChallengeDetailsPage = () => {
                     label={challenge.difficulty}
                     color={
                       challenge.difficulty === 'Facile' ? 'success' :
-                      challenge.difficulty === 'Moyen' ? 'warning' : 'error'
+                        challenge.difficulty === 'Moyen' ? 'warning' : 'error'
                     }
                   />
                   <Chip label={challenge.category} variant="outlined" />
@@ -277,6 +301,33 @@ const ChallengeDetailsPage = () => {
                 <Typography variant="h6" gutterBottom>
                   Solutions ({challenge.solutionsCount || 0})
                 </Typography>
+
+                {user ? (
+                  <Box sx={{ mb: 4 }}>
+                    <Paper sx={{ p: 2 }}>
+                      <MonacoEditor
+                        height="300px"
+                        value={solutionCode}
+                        onChange={setSolutionCode}
+                      />
+                      <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={handleSolutionSubmit}
+                          disabled={submittingSolution || !solutionCode.trim()}
+                          startIcon={submittingSolution ? <CircularProgress size={20} /> : <SendIcon />}
+                        >
+                          {submittingSolution ? 'Soumission...' : 'Soumettre la solution'}
+                        </Button>
+                      </Box>
+                    </Paper>
+                  </Box>
+                ) : (
+                  <Alert severity="info" sx={{ mb: 4 }}>
+                    Connectez-vous pour soumettre une solution
+                  </Alert>
+                )}
                 <List>
                   {challenge.latestSolutions?.map((solution, index) => (
                     <Paper key={index} sx={{ mb: 2 }}>
@@ -288,11 +339,11 @@ const ChallengeDetailsPage = () => {
                         >
                           <Grid container alignItems="center" spacing={2}>
                             <Grid item>
-                              <Avatar>{solution.author.username[0]}</Avatar>
+                              <Avatar>{solution.user.username[0]}</Avatar>
                             </Grid>
                             <Grid item xs>
                               <Typography variant="subtitle1">
-                                {solution.author.username}
+                                {solution.user.username}
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
                                 {new Date(solution.createdAt).toLocaleString()}
@@ -300,55 +351,25 @@ const ChallengeDetailsPage = () => {
                             </Grid>
                             <Grid item>
                               <Chip
+                                label={solution.status}
+                                color={solution.status === 'accepted' ? 'success' : 'error'}
                                 size="small"
-                                label={
-                                  solution.status === 'accepted' ? '✅ Acceptée' :
-                                  solution.status === 'wrong_answer' ? '❌ Mauvaise réponse' :
-                                  solution.status === 'time_limit' ? '⏰ Temps dépassé' :
-                                  solution.status === 'memory_limit' ? '💾 Mémoire dépassée' :
-                                  solution.status === 'runtime_error' ? '🐛 Erreur d\'exécution' :
-                                  solution.status === 'compilation_error' ? '⚠️ Erreur de compilation' :
-                                  solution.status === 'running' ? '⚡ En cours' : '⏳ En attente'
-                                }
-                                color={
-                                  solution.status === 'accepted' ? 'success' :
-                                  solution.status === 'running' ? 'info' :
-                                  solution.status === 'pending' ? 'default' : 'error'
-                                }
                               />
                             </Grid>
                           </Grid>
                         </AccordionSummary>
                         <AccordionDetails>
-                          <Box sx={{ mb: 2 }}>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                              Score: {solution.score}/100
+                          <Box sx={{ mt: 2 }}>
+                            <Typography variant="h6" gutterBottom>
+                              Solution Code:
                             </Typography>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                              Tests réussis: {solution.executionStats?.passedTests}/{solution.executionStats?.totalTests}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                              Temps d'exécution: {solution.executionStats?.totalTime}ms
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                              Mémoire utilisée: {solution.executionStats?.maxMemory}MB
-                            </Typography>
+                            <MonacoEditor
+                              height="300px"
+                              language="codefr"
+                              readOnly={true}
+                              value={solution.code}
+                            />
                           </Box>
-                          {solution.code && (
-                            <Box sx={{ height: 200 }}>
-                              <MonacoEditor
-                                value={solution.code}
-                                language="javascript"
-                                theme="vs-dark"
-                                options={{
-                                  readOnly: true,
-                                  minimap: { enabled: false },
-                                  scrollBeyondLastLine: false,
-                                  fontSize: 14
-                                }}
-                              />
-                            </Box>
-                          )}
                         </AccordionDetails>
                       </Accordion>
                     </Paper>
@@ -415,7 +436,7 @@ const ChallengeDetailsPage = () => {
                       {user && (user._id === comment.author._id || user.role === 'admin') && (
                         <IconButton
                           edge="end"
-                          size="small"
+                          aria-label="delete"
                           onClick={() => handleDeleteComment(comment._id)}
                         >
                           <DeleteIcon />

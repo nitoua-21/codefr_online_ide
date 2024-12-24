@@ -82,7 +82,8 @@ const challengeService = {
   // Submit a solution for a challenge
   submitSolution: async (challengeId, code) => {
     try {
-      const response = await api.post(`/challenges/${challengeId}/solutions`, { code });
+      //const response = await api.post(`/challenges/${challengeId}/solutions`, { code });
+      const response = await api.post(`/solutions/challenge/${challengeId}`, { code });
       return response.data;
     } catch (error) {
       throw handleApiError(error);
