@@ -21,7 +21,10 @@ import {
   ListItem,
   ListItemAvatar,
   ListItemText,
-  ListItemSecondary
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Tooltip
 } from '@mui/material';
 import {
   Timer as TimerIcon,
@@ -31,12 +34,13 @@ import {
   Send as SendIcon,
   ThumbUp as ThumbUpIcon,
   ThumbDown as ThumbDownIcon,
-  Code as CodeIcon
+  Code as CodeIcon,
+  ExpandMore as ExpandMoreIcon
 } from '@mui/icons-material';
 import { useChallenges } from '../contexts/ChallengesContext';
 import { useAuth } from '../contexts/AuthContext';
 import AnimatedPage from '../components/AnimatedPage';
-import MonacoEditor from '../components/CodeEditor/MonacoEditor';
+import MonacoEditor from '@monaco-editor/react';
 
 const TabPanel = ({ children, value, index, ...other }) => (
   <div
@@ -230,65 +234,84 @@ const ChallengeDetailsPage = () => {
 
               {/* Solutions Tab */}
               <TabPanel value={tabValue} index={0}>
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="h6" gutterBottom>
-                    Votre Solution
-                  </Typography>
-                  <Box sx={{ height: 300, mb: 2 }}>
-                    <MonacoEditor
-                      value={code}
-                      onChange={setCode}
-                      language="javascript"
-                    />
-                  </Box>
-                  <Box display="flex" justifyContent="flex-end">
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={handleSolutionSubmit}
-                      startIcon={<SendIcon />}
-                    >
-                      Soumettre
-                    </Button>
-                  </Box>
-                </Box>
-
-                <Divider sx={{ my: 3 }} />
-
                 <Typography variant="h6" gutterBottom>
-                  Solutions Récentes
+                  Solutions ({challenge.solutionsCount || 0})
                 </Typography>
                 <List>
                   {challenge.latestSolutions?.map((solution, index) => (
-                    <ListItem
-                      key={index}
-                      alignItems="flex-start"
-                      secondaryAction={
-                        <Box>
-                          <IconButton size="small" color="primary">
-                            <ThumbUpIcon />
-                          </IconButton>
-                          <IconButton size="small" color="error">
-                            <ThumbDownIcon />
-                          </IconButton>
-                        </Box>
-                      }
-                    >
-                      <ListItemAvatar>
-                        <Avatar>{solution.author.username[0]}</Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={solution.author.username}
-                        secondary={
-                          <>
-                            <Typography component="span" variant="body2" color="text.primary">
-                              {solution.status === 'passed' ? '✅ Réussi' : solution.status === 'failed' ? '❌ Échoué' : '⏳ En cours'}
+                    <Paper key={index} sx={{ mb: 2 }}>
+                      <Accordion>
+                        <AccordionSummary
+                          expandIcon={<ExpandMoreIcon />}
+                          aria-controls={`solution-${index}-content`}
+                          id={`solution-${index}-header`}
+                        >
+                          <Grid container alignItems="center" spacing={2}>
+                            <Grid item>
+                              <Avatar>{solution.author.username[0]}</Avatar>
+                            </Grid>
+                            <Grid item xs>
+                              <Typography variant="subtitle1">
+                                {solution.author.username}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {new Date(solution.createdAt).toLocaleString()}
+                              </Typography>
+                            </Grid>
+                            <Grid item>
+                              <Chip
+                                size="small"
+                                label={
+                                  solution.status === 'accepted' ? '✅ Acceptée' :
+                                  solution.status === 'wrong_answer' ? '❌ Mauvaise réponse' :
+                                  solution.status === 'time_limit' ? '⏰ Temps dépassé' :
+                                  solution.status === 'memory_limit' ? '💾 Mémoire dépassée' :
+                                  solution.status === 'runtime_error' ? '🐛 Erreur d\'exécution' :
+                                  solution.status === 'compilation_error' ? '⚠️ Erreur de compilation' :
+                                  solution.status === 'running' ? '⚡ En cours' : '⏳ En attente'
+                                }
+                                color={
+                                  solution.status === 'accepted' ? 'success' :
+                                  solution.status === 'running' ? 'info' :
+                                  solution.status === 'pending' ? 'default' : 'error'
+                                }
+                              />
+                            </Grid>
+                          </Grid>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                          <Box sx={{ mb: 2 }}>
+                            <Typography variant="body2" color="text.secondary" gutterBottom>
+                              Score: {solution.score}/100
                             </Typography>
-                            {' — '}{new Date(solution.createdAt).toLocaleDateString()}
-                          </>
-                        }
-                      />
-                    </ListItem>
+                            <Typography variant="body2" color="text.secondary" gutterBottom>
+                              Tests réussis: {solution.executionStats?.passedTests}/{solution.executionStats?.totalTests}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" gutterBottom>
+                              Temps d'exécution: {solution.executionStats?.totalTime}ms
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" gutterBottom>
+                              Mémoire utilisée: {solution.executionStats?.maxMemory}MB
+                            </Typography>
+                          </Box>
+                          {solution.code && (
+                            <Box sx={{ height: 200 }}>
+                              <MonacoEditor
+                                value={solution.code}
+                                language="javascript"
+                                theme="vs-dark"
+                                options={{
+                                  readOnly: true,
+                                  minimap: { enabled: false },
+                                  scrollBeyondLastLine: false,
+                                  fontSize: 14
+                                }}
+                              />
+                            </Box>
+                          )}
+                        </AccordionDetails>
+                      </Accordion>
+                    </Paper>
                   ))}
                 </List>
               </TabPanel>
