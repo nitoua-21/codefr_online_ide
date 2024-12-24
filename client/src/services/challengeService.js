@@ -122,7 +122,7 @@ const challengeService = {
   // Get comments for a challenge
   getComments: async (challengeId, page = 1, limit = 10) => {
     try {
-      const response = await api.get(`/challenges/${challengeId}/comments`, {
+      const response = await api.get(`/comments/challenges/${challengeId}/comments`, {
         params: { page, limit }
       });
       return response.data;
@@ -134,7 +134,7 @@ const challengeService = {
   // Add a comment to a challenge
   addComment: async (challengeId, content) => {
     try {
-      const response = await api.post(`/challenges/${challengeId}/comments`, { content });
+      const response = await api.post(`/comments/challenges/${challengeId}/comments`, { content });
       return response.data;
     } catch (error) {
       throw handleApiError(error);
@@ -144,7 +144,7 @@ const challengeService = {
   // Delete a comment
   deleteComment: async (challengeId, commentId) => {
     try {
-      await api.delete(`/challenges/${challengeId}/comments/${commentId}`);
+      await api.delete(`/comments/challenges/${challengeId}/comments/${commentId}`);
       return true;
     } catch (error) {
       throw handleApiError(error);
