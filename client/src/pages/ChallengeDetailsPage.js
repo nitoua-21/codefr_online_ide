@@ -35,10 +35,12 @@ import {
   ThumbUp as ThumbUpIcon,
   ThumbDown as ThumbDownIcon,
   Code as CodeIcon,
-  ExpandMore as ExpandMoreIcon
+  ExpandMore as ExpandMoreIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 import { useChallenges } from '../contexts/ChallengesContext';
 import { useAuth } from '../contexts/AuthContext';
+import challengeService from '../services/challengeService';
 import AnimatedPage from '../components/AnimatedPage';
 import MonacoEditor from '@monaco-editor/react';
 
@@ -61,15 +63,17 @@ const ChallengeDetailsPage = () => {
   const { getChallenge, loading, error } = useChallenges();
   const [challenge, setChallenge] = useState(null);
   const [tabValue, setTabValue] = useState(0);
-  const [comment, setComment] = useState('');
-  const [code, setCode] = useState('');
+  const [comments, setComments] = useState([]);
+  const [commentsPage, setCommentsPage] = useState(1);
+  const [totalCommentsPages, setTotalCommentsPages] = useState(1);
+  const [commentContent, setCommentContent] = useState('');
+  const [loadingComments, setLoadingComments] = useState(false);
 
   useEffect(() => {
     const fetchChallenge = async () => {
       try {
         const challengeData = await getChallenge(id);
         setChallenge(challengeData);
-        setCode(challengeData.initialCode || '');
       } catch (err) {
         console.error('Error fetching challenge:', err);
       }
@@ -95,15 +99,51 @@ const ChallengeDetailsPage = () => {
     setTabValue(newValue);
   };
 
-  const handleCommentSubmit = () => {
-    // TODO: Implement comment submission
-    console.log('Submitting comment:', comment);
-    setComment('');
+  const fetchComments = async () => {
+    try {
+      setLoadingComments(true);
+      const data = await challengeService.getComments(id, commentsPage);
+      setComments(prevComments => 
+        commentsPage === 1 ? data.comments : [...prevComments, ...data.comments]
+      );
+      setTotalCommentsPages(data.totalPages);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    } finally {
+      setLoadingComments(false);
+    }
   };
 
-  const handleSolutionSubmit = () => {
-    // TODO: Implement solution submission
-    console.log('Submitting solution:', code);
+  useEffect(() => {
+    if (challenge && tabValue === 1) {
+      fetchComments();
+    }
+  }, [challenge, tabValue, commentsPage]);
+
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    if (!commentContent.trim()) return;
+
+    try {
+      const { comment } = await challengeService.addComment(id, commentContent);
+      setComments(prev => [comment, ...prev]);
+      setCommentContent('');
+    } catch (error) {
+      console.error('Error submitting comment:', error);
+    }
+  };
+
+  const handleLoadMoreComments = () => {
+    setCommentsPage(prev => prev + 1);
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    try {
+      await challengeService.deleteComment(id, commentId);
+      setComments(prevComments => prevComments.filter(comment => comment._id !== commentId));
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+    }
   };
 
   if (loading) {
@@ -318,48 +358,86 @@ const ChallengeDetailsPage = () => {
 
               {/* Comments Tab */}
               <TabPanel value={tabValue} index={1}>
-                <Box sx={{ mb: 3 }}>
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={3}
-                    placeholder="Ajouter un commentaire..."
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    sx={{ mb: 2 }}
-                  />
-                  <Box display="flex" justifyContent="flex-end">
+                {user ? (
+                  <Box component="form" onSubmit={handleCommentSubmit} sx={{ mb: 4 }}>
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={3}
+                      placeholder="Ajouter un commentaire..."
+                      value={commentContent}
+                      onChange={(e) => setCommentContent(e.target.value)}
+                      sx={{ mb: 2 }}
+                    />
                     <Button
+                      type="submit"
                       variant="contained"
-                      color="primary"
-                      onClick={handleCommentSubmit}
-                      disabled={!comment.trim()}
+                      disabled={!commentContent.trim()}
                       startIcon={<SendIcon />}
                     >
                       Commenter
                     </Button>
                   </Box>
-                </Box>
+                ) : (
+                  <Alert severity="info" sx={{ mb: 4 }}>
+                    Connectez-vous pour ajouter un commentaire
+                  </Alert>
+                )}
 
                 <List>
-                  {/* TODO: Replace with actual comments */}
-                  <ListItem alignItems="flex-start">
-                    <ListItemAvatar>
-                      <Avatar>U</Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary="Utilisateur"
-                      secondary={
-                        <>
-                          <Typography component="span" variant="body2" color="text.primary">
-                            Excellent défi ! J'ai beaucoup appris.
-                          </Typography>
-                          {' — Il y a 2 heures'}
-                        </>
-                      }
-                    />
-                  </ListItem>
+                  {comments.map((comment, index) => (
+                    <ListItem
+                      key={comment._id}
+                      alignItems="flex-start"
+                      divider={index < comments.length - 1}
+                    >
+                      <ListItemAvatar>
+                        <Avatar>{comment.author.username[0]}</Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={comment.author.username}
+                        secondary={
+                          <>
+                            <Typography
+                              component="span"
+                              variant="body2"
+                              color="text.primary"
+                              sx={{ display: 'block', mb: 1 }}
+                            >
+                              {comment.content}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {new Date(comment.createdAt).toLocaleString()}
+                            </Typography>
+                          </>
+                        }
+                      />
+                      {user && (user._id === comment.author._id || user.role === 'admin') && (
+                        <IconButton
+                          edge="end"
+                          size="small"
+                          onClick={() => handleDeleteComment(comment._id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      )}
+                    </ListItem>
+                  ))}
                 </List>
+
+                {!loadingComments && commentsPage < totalCommentsPages && (
+                  <Box display="flex" justifyContent="center" mt={2}>
+                    <Button onClick={handleLoadMoreComments}>
+                      Voir plus de commentaires
+                    </Button>
+                  </Box>
+                )}
+
+                {loadingComments && (
+                  <Box display="flex" justifyContent="center" mt={2}>
+                    <CircularProgress size={24} />
+                  </Box>
+                )}
               </TabPanel>
             </Paper>
           </Grid>

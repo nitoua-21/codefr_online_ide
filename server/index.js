@@ -12,6 +12,7 @@ const codeSnippetRoutes = require('./routes/codeSnippets');
 const challengeRoutes = require('./routes/challenges');
 const solutionRoutes = require('./routes/solutions');
 const executionRoutes = require('./routes/execution');
+const commentRoutes = require('./routes/comments');
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use('/api/code-snippets', codeSnippetRoutes);
 app.use('/api/challenges', challengeRoutes);
 app.use('/api/solutions', solutionRoutes);
 app.use('/api/execution', executionRoutes);
+app.use('/api/comments', commentRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

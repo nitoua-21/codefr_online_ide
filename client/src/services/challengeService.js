@@ -117,6 +117,38 @@ const challengeService = {
     } catch (error) {
       throw handleApiError(error);
     }
+  },
+
+  // Get comments for a challenge
+  getComments: async (challengeId, page = 1, limit = 10) => {
+    try {
+      const response = await api.get(`/challenges/${challengeId}/comments`, {
+        params: { page, limit }
+      });
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  // Add a comment to a challenge
+  addComment: async (challengeId, content) => {
+    try {
+      const response = await api.post(`/challenges/${challengeId}/comments`, { content });
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  // Delete a comment
+  deleteComment: async (challengeId, commentId) => {
+    try {
+      await api.delete(`/challenges/${challengeId}/comments/${commentId}`);
+      return true;
+    } catch (error) {
+      throw handleApiError(error);
+    }
   }
 };
 
