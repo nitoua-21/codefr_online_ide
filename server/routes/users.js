@@ -125,6 +125,17 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
+// Get total number of users
+router.get('/count', async (req, res) => {
+  try {
+    const count = await User.countDocuments();
+    res.json({ count });
+  } catch (error) {
+    console.error('Error getting user count:', error);
+    res.status(500).json({ error: 'Error getting user count' });
+  }
+});
+
 // Logout user
 router.post('/logout', auth, (req, res) => {
   try {
