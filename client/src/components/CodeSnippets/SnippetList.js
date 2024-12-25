@@ -11,6 +11,10 @@ import {
   Stack,
   Tooltip,
   Grid,
+  Avatar,
+  Button,
+  Divider,
+  useTheme
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -19,12 +23,14 @@ import {
   Public as PublicIcon,
   Lock as LockIcon,
   Star as StarIcon,
-  Share as ShareIcon,
+  Comment as CommentIcon,
+  AccessTime as AccessTimeIcon,
 } from '@mui/icons-material';
 
 const SnippetCard = ({ snippet, onDelete }) => {
   const navigate = useNavigate();
-  const { title, description, tags, isPublic, likes, createdAt } = snippet;
+  const theme = useTheme();
+  const { title, description, tags, isPublic, likes, comments, createdAt, author } = snippet;
 
   const handleEdit = () => {
     navigate(`/editor/${snippet._id}`);
@@ -34,7 +40,14 @@ const SnippetCard = ({ snippet, onDelete }) => {
     navigate('/editor', { state: { snippetId: snippet._id } });
   };
 
-  const formatDate = (date) => {
+  const getTimeAgo = (date) => {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - new Date(date)) / 1000);
+    
+    if (diffInSeconds < 60) return 'À l\'instant';
+    if (diffInSeconds < 3600) return `Il y a ${Math.floor(diffInSeconds / 60)} min`;
+    if (diffInSeconds < 86400) return `Il y a ${Math.floor(diffInSeconds / 3600)} h`;
+    if (diffInSeconds < 604800) return `Il y a ${Math.floor(diffInSeconds / 86400)} j`;
     return new Date(date).toLocaleDateString('fr-FR', {
       year: 'numeric',
       month: 'long',
@@ -43,26 +56,65 @@ const SnippetCard = ({ snippet, onDelete }) => {
   };
 
   return (
-    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <CardContent sx={{ flexGrow: 1 }}>
+    <Card 
+      sx={{ 
+        height: '100%', 
+        display: 'flex', 
+        flexDirection: 'column',
+        transition: 'transform 0.2s, box-shadow 0.2s',
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: theme.shadows[4]
+        },
+        borderRadius: 2,
+        overflow: 'hidden'
+      }}
+    >
+      <Box 
+        sx={{ 
+          p: 2, 
+          background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+          color: 'white'
+        }}
+      >
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-          <Typography variant="h6" component="div" noWrap>
-            {title}
-          </Typography>
+          <Box display="flex" alignItems="center" gap={1}>
+            <Avatar 
+              src={author?.avatar} 
+              alt={author?.username}
+              sx={{ width: 32, height: 32 }}
+            >
+              {author?.username?.[0]?.toUpperCase()}
+            </Avatar>
+            <Typography variant="subtitle2">
+              {author?.username}
+            </Typography>
+          </Box>
           <Tooltip title={isPublic ? 'Public' : 'Privé'}>
-            <IconButton size="small">
-              {isPublic ? <PublicIcon color="primary" /> : <LockIcon color="action" />}
+            <IconButton size="small" sx={{ color: 'white' }}>
+              {isPublic ? <PublicIcon /> : <LockIcon />}
             </IconButton>
           </Tooltip>
         </Box>
-        
-        <Typography variant="body2" color="text.secondary" mb={2} sx={{
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-        }}>
+        <Typography variant="h6" component="div" gutterBottom>
+          {title}
+        </Typography>
+      </Box>
+
+      <CardContent sx={{ flexGrow: 1, pt: 2 }}>
+        <Typography 
+          variant="body2" 
+          color="text.secondary" 
+          mb={2} 
+          sx={{
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            minHeight: '2.5em'
+          }}
+        >
           {description || 'Aucune description'}
         </Typography>
 
@@ -72,45 +124,71 @@ const SnippetCard = ({ snippet, onDelete }) => {
               key={index}
               label={tag}
               size="small"
-              sx={{ marginBottom: 0.5 }}
+              variant="outlined"
+              sx={{ 
+                marginBottom: 0.5,
+                borderRadius: 1
+              }}
             />
           ))}
         </Stack>
 
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box display="flex" alignItems="center">
-            <StarIcon fontSize="small" color="action" sx={{ mr: 0.5 }} />
-            <Typography variant="body2" color="text.secondary">
+        <Box 
+          display="flex" 
+          alignItems="center" 
+          gap={2}
+          sx={{ color: 'text.secondary', fontSize: '0.875rem' }}
+        >
+          <Box display="flex" alignItems="center" gap={0.5}>
+            <StarIcon fontSize="small" color="warning" />
+            <Typography variant="body2">
               {likes?.length || 0}
             </Typography>
           </Box>
-          <Typography variant="caption" color="text.secondary">
-            {formatDate(createdAt)}
-          </Typography>
+          <Box display="flex" alignItems="center" gap={0.5}>
+            <CommentIcon fontSize="small" />
+            <Typography variant="body2">
+              {comments?.length || 0}
+            </Typography>
+          </Box>
+          <Box display="flex" alignItems="center" gap={0.5} ml="auto">
+            <AccessTimeIcon fontSize="small" />
+            <Typography variant="body2">
+              {getTimeAgo(createdAt)}
+            </Typography>
+          </Box>
         </Box>
       </CardContent>
 
-      <CardActions sx={{ justifyContent: 'flex-end', p: 1 }}>
-        <Tooltip title="Voir">
-          <IconButton size="small" onClick={handleView}>
-            <ViewIcon />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Modifier">
-          <IconButton size="small" onClick={handleEdit}>
-            <EditIcon />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Partager">
-          <IconButton size="small">
-            <ShareIcon />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Supprimer">
-          <IconButton size="small" onClick={() => onDelete(snippet._id)} color="error">
-            <DeleteIcon />
-          </IconButton>
-        </Tooltip>
+      <Divider />
+      
+      <CardActions sx={{ p: 1.5, gap: 1 }}>
+        <Button
+          size="small"
+          startIcon={<ViewIcon />}
+          onClick={handleView}
+          variant="contained"
+          color="primary"
+          sx={{ flex: 1 }}
+        >
+          Voir
+        </Button>
+        <Button
+          size="small"
+          startIcon={<EditIcon />}
+          onClick={handleEdit}
+          variant="outlined"
+          sx={{ flex: 1 }}
+        >
+          Modifier
+        </Button>
+        <IconButton 
+          size="small" 
+          onClick={() => onDelete(snippet._id)}
+          sx={{ ml: 'auto' }}
+        >
+          <DeleteIcon color="error" />
+        </IconButton>
       </CardActions>
     </Card>
   );
