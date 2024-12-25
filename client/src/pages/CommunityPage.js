@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, Grid, Card, CardContent, CardActions, Button, Box, Avatar, Divider, CircularProgress } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import AnimatedPage from '../components/AnimatedPage';
 import CodeIcon from '@mui/icons-material/Code';
 import GroupIcon from '@mui/icons-material/Group';
 import ForumIcon from '@mui/icons-material/Forum';
 import ShareIcon from '@mui/icons-material/Share';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import codeSnippetService from '../services/codeSnippetService';
 
 const CommunityPage = () => {
+  const navigate = useNavigate();
   const [snippets, setSnippets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -26,6 +29,10 @@ const CommunityPage = () => {
 
     fetchSnippets();
   }, []);
+
+  const handleViewCode = (snippet) => {
+    navigate(`/editor?snippet=${snippet._id}`);
+  };
 
   return (
     <AnimatedPage>
@@ -121,16 +128,25 @@ const CommunityPage = () => {
                               •
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              {snippet.comments?.length || 0} comments
+                              {snippet.comments?.length || 0} commentaires
                             </Typography>
                           </Box>
-                          <Button
-                            size="small"
-                            startIcon={<ShareIcon />}
-                            onClick={() => {/* Handle share */}}
-                          >
-                            Share
-                          </Button>
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Button
+                              size="small"
+                              startIcon={<VisibilityIcon />}
+                              onClick={() => handleViewCode(snippet)}
+                            >
+                              Voir
+                            </Button>
+                            <Button
+                              size="small"
+                              startIcon={<ShareIcon />}
+                              onClick={() => {/* Handle share */}}
+                            >
+                              Partager
+                            </Button>
+                          </Box>
                         </CardActions>
                       </Card>
                     </Grid>
