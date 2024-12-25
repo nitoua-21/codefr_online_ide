@@ -20,6 +20,7 @@ import {
   Autocomplete,
   Divider,
   Drawer,
+  Avatar
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -65,6 +66,7 @@ const EditorPage = () => {
   });
   const [validationError, setValidationError] = useState('');
   const [showComments, setShowComments] = useState(false);
+  const [snippetAuthor, setSnippetAuthor] = useState(null);
 
   useEffect(() => {
     const loadSnippet = async () => {
@@ -79,6 +81,7 @@ const EditorPage = () => {
             isPublic: snippet.isPublic || false,
           });
           setIsStarred(snippet.stars.includes(user?._id));
+          setSnippetAuthor(snippet.author);
         } catch (err) {
           setError('Erreur lors du chargement du snippet');
           console.error('Load snippet error:', err);
@@ -203,11 +206,30 @@ const EditorPage = () => {
               )}
 
               {snippetId && (
-                <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
-                  ID: {snippetId}
-                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                    ID: {snippetId}
+                  </Typography>
+                  {snippetAuthor && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Avatar 
+                        sx={{ 
+                          width: 24, 
+                          height: 24, 
+                          bgcolor: 'primary.main',
+                          fontSize: '0.875rem'
+                        }}
+                      >
+                        {snippetAuthor.username[0].toUpperCase()}
+                      </Avatar>
+                      <Typography variant="body2" color="text.secondary">
+                        {snippetAuthor.username}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
               )}
-
+              
               <TextField
                 label="Titre"
                 value={snippetData.title}
