@@ -29,6 +29,7 @@ import {
   Star as StarIcon,
   StarBorder as StarBorderIcon,
   ContentCopy as ForkIcon,
+  Comment as CommentIcon
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import AnimatedPage from '../components/AnimatedPage';
@@ -338,6 +339,12 @@ const EditorPage = () => {
                       onClick={handleShareSnippet}
                     >
                       Partager
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<CommentIcon />}
+                    >
+                      Commentaires
                     </Button>
                   </>
                 )}
