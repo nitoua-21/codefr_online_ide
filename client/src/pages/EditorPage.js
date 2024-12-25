@@ -278,7 +278,7 @@ const EditorPage = () => {
                     variant="outlined"
                     startIcon={<SaveIcon />}
                     onClick={handleSaveCode}
-                    disabled={!isAuthenticated}
+                    disabled={!isAuthenticated || user?.username !== snippetAuthor?.username}
                   >
                     Sauvegarder
                   </Button>
@@ -289,16 +289,16 @@ const EditorPage = () => {
                         variant="outlined"
                         startIcon={isStarred ? <StarIcon /> : <StarBorderIcon />}
                         onClick={handleStarSnippet}
-                        disabled={!isAuthenticated}
+                        disabled={!isAuthenticated || user?.username === snippetAuthor?.username}
                       >
-                        {isStarred ? 'Retiré des favoris' : 'Ajouter aux favoris'}
+                        {isStarred ? 'Retirer des favoris' : 'Ajouter aux favoris'}
                       </Button>
 
                       <Button
                         variant="outlined"
                         startIcon={<ForkIcon />}
                         onClick={handleForkSnippet}
-                        disabled={!isAuthenticated}
+                        disabled={!isAuthenticated || user?.username === snippetAuthor?.username}
                       >
                         Forker
                       </Button>
@@ -333,6 +333,7 @@ const EditorPage = () => {
                 <MonacoEditor
                   value={code}
                   onChange={setCode}
+                  readOnly={ user?.username !== snippetAuthor?.username}
                 />
               </Box>
 
