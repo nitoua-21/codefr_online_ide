@@ -89,10 +89,14 @@ const CommentSection = ({ snippetId, currentUser, onClose }) => {
       setSubmitting(true);
       const response = await codeSnippetService.deleteComment(snippetId, commentToDelete._id);
       console.log('Deleted comment:', response);
-      await fetchComments();
-      setError(null);
+      if (response.success) {
+        await fetchComments(); // Refresh comments after successful deletion
+        setError(null);
+      } else {
+        setError(response.error || 'Erreur lors de la suppression du commentaire');
+      }
     } catch (err) {
-      setError('Erreur lors de la suppression du commentaire');
+      setError(err.message || 'Erreur lors de la suppression du commentaire');
       console.error('Error deleting comment:', err);
     } finally {
       setSubmitting(false);

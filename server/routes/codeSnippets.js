@@ -239,11 +239,10 @@ router.post('/:id/like', auth, async (req, res) => {
   }
 });
 
-// Add a comment
+// Add a comment to a snippet
 router.post('/:id/comments', auth, async (req, res) => {
   try {
     const snippet = await CodeSnippet.findById(req.params.id);
-
     if (!snippet) {
       return res.status(404).json({
         success: false,
@@ -252,24 +251,26 @@ router.post('/:id/comments', auth, async (req, res) => {
     }
 
     const comment = {
+      content: req.body.content,
       author: req.user._id,
-      content: req.body.content
+      createdAt: new Date()
     };
 
     snippet.comments.push(comment);
     await snippet.save();
 
-    // Populate the new comment's author
-    const populatedSnippet = await CodeSnippet.findById(snippet._id)
-      .populate('comments.author', 'username');
+    // Populate the author details for the new comment
+    await snippet.populate('comments.author', 'username');
 
-    const newComment = populatedSnippet.comments[populatedSnippet.comments.length - 1];
+    // Return only the newly added comment
+    const newComment = snippet.comments[snippet.comments.length - 1];
 
-    res.json({
+    res.status(201).json({
       success: true,
       comment: newComment
     });
   } catch (error) {
+    console.error('Add comment error:', error);
     res.status(400).json({
       success: false,
       error: error.message
@@ -277,11 +278,10 @@ router.post('/:id/comments', auth, async (req, res) => {
   }
 });
 
-// Delete a comment
+// Delete a comment from a snippet
 router.delete('/:id/comments/:commentId', auth, async (req, res) => {
   try {
     const snippet = await CodeSnippet.findById(req.params.id);
-
     if (!snippet) {
       return res.status(404).json({
         success: false,
@@ -290,7 +290,6 @@ router.delete('/:id/comments/:commentId', auth, async (req, res) => {
     }
 
     const comment = snippet.comments.id(req.params.commentId);
-
     if (!comment) {
       return res.status(404).json({
         success: false,
@@ -298,15 +297,15 @@ router.delete('/:id/comments/:commentId', auth, async (req, res) => {
       });
     }
 
-    // Only allow comment author or snippet author to delete
-    if (!comment.author.equals(req.user._id) && !snippet.author.equals(req.user._id)) {
+    // Check if the user is the comment author
+    if (comment.author.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to delete this comment'
       });
     }
 
-    comment.remove();
+    comment.deleteOne();
     await snippet.save();
 
     res.json({
@@ -314,6 +313,7 @@ router.delete('/:id/comments/:commentId', auth, async (req, res) => {
       message: 'Comment deleted successfully'
     });
   } catch (error) {
+    console.error('Delete comment error:', error);
     res.status(400).json({
       success: false,
       error: error.message
