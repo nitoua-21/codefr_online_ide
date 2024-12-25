@@ -4,7 +4,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { Box } from '@mui/material';
 import { registerCodeFrLanguage } from './CodeFrLanguage';
 
-const MonacoEditor = ({ value, onChange, readOnly = false }) => {
+const MonacoEditor = ({ value, onChange, readOnly = false, height = '400px', showMap = true }) => {
   const editorRef = useRef(null);
   const containerRef = useRef(null);
   const { mode } = useTheme();
@@ -19,7 +19,7 @@ const MonacoEditor = ({ value, onChange, readOnly = false }) => {
         value: value || 'Algorithme Nom_Algorithme\nVariables\n\tVariable1: Type1\nDebut\n\tInstruction1\nFin',
         language: 'codefr',
         theme: mode === 'dark' ? 'vs-dark' : 'vs',
-        minimap: { enabled: true },
+        minimap: { enabled: showMap },
         fontSize: 14,
         automaticLayout: true,
         lineNumbers: 'on',
@@ -82,7 +82,7 @@ const MonacoEditor = ({ value, onChange, readOnly = false }) => {
       ref={containerRef}
       sx={{
         width: '100%',
-        height: '400px',
+        height: {height},
         '& .monaco-editor': {
           paddingTop: 1,
         },

@@ -10,7 +10,25 @@ import {
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import InfoIcon from '@mui/icons-material/Info';
 import { Link as RouterLink} from 'react-router-dom';
+import MonacoEditor from '../components/CodeEditor/MonacoEditor';
 
+
+const DEFAULT_CODE = `Algorithme SommeTableau
+Variable somme, i: Entier
+Tableau T[5]: Entier
+Debut
+    Pour i De 0 A 4 Faire
+        T[i] = i * 2
+    FinPour
+
+    somme = 0
+    Pour i De 0 A 4 Faire
+        somme = somme + T[i]
+    FinPour
+
+    Ecrire("Somme:", somme)
+Fin
+`
 const Hero = () => {
   const theme = useTheme();
 
@@ -77,16 +95,22 @@ const Hero = () => {
           </Box>
 
           <Paper
-            elevation={6}
             sx={{
               flex: 1,
-              bgcolor: 'grey.900',
               p: 3,
               borderRadius: 2,
               maxWidth: { xs: '100%', md: '500px' }
             }}
           >
-            <Typography
+            <MonacoEditor
+              language="c"
+              theme="vs-dark"
+              readOnly = {true}
+              height='350px'
+              showMap = {false}
+              value={DEFAULT_CODE}
+            />
+            {/*<Typography
               component="pre"
               sx={{
                 fontFamily: 'Fira Code, monospace',
@@ -111,9 +135,9 @@ Debut
 
     Ecrire("Somme:", somme)
 Fin
-}`}
+`}
               </code>
-            </Typography>
+            </Typography>*/}
           </Paper>
         </Box>
       </Container>
