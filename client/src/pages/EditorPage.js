@@ -19,6 +19,8 @@ import {
   Switch,
   Autocomplete,
   Divider,
+  Dialog,
+  DialogContent,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -29,11 +31,12 @@ import {
   Star as StarIcon,
   StarBorder as StarBorderIcon,
   ContentCopy as ForkIcon,
-  Comment as CommentIcon
+  Comment as CommentIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import AnimatedPage from '../components/AnimatedPage';
 import MonacoEditor from '../components/CodeEditor/MonacoEditor';
+import CommentSection from '../components/Comments/CommentSection';
 import executionService from '../services/executionService';
 import codeSnippetService from '../services/codeSnippetService';
 
@@ -62,6 +65,7 @@ const EditorPage = () => {
     isPublic: false,
   });
   const [validationError, setValidationError] = useState('');
+  const [showCommentsDialog, setShowCommentsDialog] = useState(false);
 
   useEffect(() => {
     const loadSnippet = async () => {
@@ -180,6 +184,10 @@ const EditorPage = () => {
       navigator.clipboard.writeText(window.location.href);
       setSuccessMessage('Lien copié dans le presse-papier');
     }
+  };
+
+  const handleToggleComments = () => {
+    setShowCommentsDialog(!showCommentsDialog);
   };
 
   return (
@@ -343,6 +351,7 @@ const EditorPage = () => {
                     <Button
                       variant="outlined"
                       startIcon={<CommentIcon />}
+                      onClick={handleToggleComments}
                     >
                       Commentaires
                     </Button>
@@ -402,6 +411,30 @@ const EditorPage = () => {
               )}
             </Box>
           </Paper>
+
+          {/* Comments Dialog */}
+          <Dialog
+            open={showCommentsDialog}
+            onClose={() => setShowCommentsDialog(false)}
+            maxWidth="sm"
+            fullWidth
+            PaperProps={{
+              sx: { 
+                height: '80vh',
+                maxHeight: '800px'
+              }
+            }}
+          >
+            <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'column' }}>
+              {snippetId && (
+                <CommentSection
+                  snippetId={snippetId}
+                  currentUser={user}
+                  onClose={() => setShowCommentsDialog(false)}
+                />
+              )}
+            </DialogContent>
+          </Dialog>
 
           {/* Feature Alert */}
           <Snackbar
