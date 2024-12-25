@@ -298,7 +298,15 @@ const EditorPage = () => {
           {/* Main Content */}
           <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
             {/* Editor Section */}
-            <Box sx={{ flex: 2, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Box 
+              sx={{ 
+                flex: { xs: 1, md: 2 }, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                overflow: 'hidden',
+                minWidth: 0 // Prevent flex items from overflowing
+              }}
+            >
               <Box sx={{ flex: 1, overflow: 'hidden' }}>
                 <MonacoEditor
                   value={code}
@@ -345,20 +353,33 @@ const EditorPage = () => {
 
             {/* Comments Section */}
             {snippetId && (
-              <Box sx={{ flex: 1, minWidth: 350, maxWidth: 400 }}>
+              <Box 
+                sx={{ 
+                  width: { xs: '100%', md: 350 },
+                  display: { xs: showComments ? 'flex' : 'none', md: 'flex' },
+                  position: { xs: 'absolute', md: 'relative' },
+                  top: { xs: 0, md: 'auto' },
+                  right: { xs: 0, md: 'auto' },
+                  bottom: { xs: 0, md: 'auto' },
+                  left: { xs: 0, md: 'auto' },
+                  bgcolor: 'background.paper',
+                  zIndex: { xs: 1200, md: 1 },
+                }}
+              >
                 <Paper
                   sx={{
-                    height: '100%',
+                    width: '100%',
                     display: 'flex',
                     flexDirection: 'column',
-                    ml: 1,
+                    ml: { xs: 0, md: 1 },
+                    height: '100%',
                     overflow: 'hidden'
                   }}
                 >
                   <CommentSection
                     snippetId={snippetId}
                     currentUser={user}
-                    onClose={() => {}}
+                    onClose={() => setShowComments(false)}
                   />
                 </Paper>
               </Box>

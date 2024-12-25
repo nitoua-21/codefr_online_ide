@@ -17,9 +17,12 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SendIcon from '@mui/icons-material/Send';
+import CloseIcon from '@mui/icons-material/Close';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import codeSnippetService from '../../services/codeSnippetService';
@@ -32,6 +35,9 @@ const CommentSection = ({ snippetId, currentUser, onClose }) => {
   const [error, setError] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState(null);
+  
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   useEffect(() => {
     fetchComments();
@@ -61,7 +67,7 @@ const CommentSection = ({ snippetId, currentUser, onClose }) => {
       const response = await codeSnippetService.addComment(snippetId, newComment);
       console.log('Added comment:', response);
       setNewComment('');
-      await fetchComments(); // Refresh comments after adding
+      await fetchComments();
       setError(null);
     } catch (err) {
       setError('Erreur lors de l\'ajout du commentaire');
@@ -83,7 +89,7 @@ const CommentSection = ({ snippetId, currentUser, onClose }) => {
       setSubmitting(true);
       const response = await codeSnippetService.deleteComment(snippetId, commentToDelete._id);
       console.log('Deleted comment:', response);
-      await fetchComments(); // Refresh comments after deleting
+      await fetchComments();
       setError(null);
     } catch (err) {
       setError('Erreur lors de la suppression du commentaire');
@@ -96,33 +102,84 @@ const CommentSection = ({ snippetId, currentUser, onClose }) => {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: '100%', 
+      overflow: 'hidden',
+      position: 'relative'
+    }}>
       <Box sx={{ 
         p: 2, 
         borderBottom: 1, 
         borderColor: 'divider',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        bgcolor: 'background.paper',
+        position: 'relative',
+        zIndex: 1
       }}>
         <Typography variant="h6">Commentaires</Typography>
+        {isMobile && (
+          <IconButton onClick={onClose} size="small">
+            <CloseIcon />
+          </IconButton>
+        )}
       </Box>
 
       {error && (
-        <Paper sx={{ m: 2, p: 2 }} elevation={0}>
+        <Paper 
+          sx={{ 
+            m: 2, 
+            p: 2,
+            position: 'absolute',
+            top: 64,
+            left: 0,
+            right: 0,
+            zIndex: 2
+          }} 
+          elevation={2}
+        >
           <Typography color="error">{error}</Typography>
         </Paper>
       )}
 
-      <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ 
+        flex: 1, 
+        overflow: 'hidden', 
+        display: 'flex', 
+        flexDirection: 'column',
+        position: 'relative'
+      }}>
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            height: '100%'
+          }}>
             <CircularProgress />
           </Box>
         ) : (
-          <List sx={{ flex: 1, overflow: 'auto', px: 2 }}>
+          <List 
+            sx={{ 
+              flex: 1, 
+              overflow: 'auto', 
+              px: 2,
+              pt: error ? 8 : 2,
+              pb: 2
+            }}
+          >
             {comments.length === 0 ? (
-              <Typography color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
+              <Typography 
+                color="text.secondary" 
+                sx={{ 
+                  textAlign: 'center', 
+                  py: 3,
+                  fontStyle: 'italic'
+                }}
+              >
                 Aucun commentaire pour le moment
               </Typography>
             ) : (
@@ -131,44 +188,76 @@ const CommentSection = ({ snippetId, currentUser, onClose }) => {
                   <ListItem
                     alignItems="flex-start"
                     secondaryAction={
-                      currentUser && comment.user && currentUser._id === comment.user._id && (
+                      currentUser && comment.author && currentUser._id === comment.author._id && (
                         <IconButton
                           edge="end"
                           aria-label="supprimer"
                           onClick={() => openDeleteDialog(comment)}
                           disabled={submitting}
+                          size="small"
                         >
                           <DeleteIcon />
                         </IconButton>
                       )
                     }
+                    sx={{ pt: index === 0 ? 0 : 2 }}
                   >
                     <ListItemAvatar>
                       <Avatar sx={{ bgcolor: 'primary.main' }}>
-                        {comment.user?.username?.[0]?.toUpperCase() || '?'}
+                        {comment.author?.username?.[0]?.toUpperCase() || '?'}
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
                       primary={
                         <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-                          <Typography component="span" variant="subtitle2">
+                          <Typography 
+                            component="span" 
+                            variant="subtitle2"
+                            sx={{ 
+                              wordBreak: 'break-word',
+                              overflowWrap: 'break-word'
+                            }}
+                          >
                             {comment.author?.username || 'Utilisateur inconnu'}
                           </Typography>
-                          <Typography component="span" variant="caption" color="text.secondary">
+                          <Typography 
+                            component="span" 
+                            variant="caption" 
+                            color="text.secondary"
+                          >
                             {comment.createdAt ? 
-                              formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: fr }) :
+                              formatDistanceToNow(new Date(comment.createdAt), { 
+                                addSuffix: true, 
+                                locale: fr 
+                              }) :
                               'Date inconnue'
                             }
                           </Typography>
                         </Box>
                       }
-                      secondary={comment.content}
-                      secondaryTypographyProps={{
-                        sx: { whiteSpace: 'pre-wrap', mt: 0.5 }
-                      }}
+                      secondary={
+                        <Typography
+                          component="div"
+                          variant="body2"
+                          sx={{ 
+                            whiteSpace: 'pre-wrap',
+                            mt: 0.5,
+                            wordBreak: 'break-word',
+                            overflowWrap: 'break-word'
+                          }}
+                        >
+                          {comment.content}
+                        </Typography>
+                      }
                     />
                   </ListItem>
-                  {index < comments.length - 1 && <Divider variant="inset" component="li" />}
+                  {index < comments.length - 1 && (
+                    <Divider 
+                      variant="inset" 
+                      component="li" 
+                      sx={{ mt: 2 }}
+                    />
+                  )}
                 </React.Fragment>
               ))
             )}
@@ -184,27 +273,37 @@ const CommentSection = ({ snippetId, currentUser, onClose }) => {
           borderTop: 1,
           borderColor: 'divider',
           bgcolor: 'background.paper',
+          position: 'relative',
+          zIndex: 1
         }}
       >
         <Box sx={{ display: 'flex', gap: 1 }}>
           <TextField
             fullWidth
             size="small"
-            placeholder="Ajouter un commentaire..."
+            placeholder={currentUser ? "Ajouter un commentaire..." : "Connectez-vous pour commenter"}
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             disabled={submitting || !currentUser}
             multiline
             maxRows={4}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                bgcolor: 'background.paper'
+              }
+            }}
           />
           <Button
             type="submit"
             variant="contained"
             disabled={submitting || !newComment.trim() || !currentUser}
-            sx={{ minWidth: 100 }}
+            sx={{ 
+              minWidth: { xs: 'auto', sm: 100 },
+              px: { xs: 2, sm: 3 }
+            }}
             endIcon={<SendIcon />}
           >
-            Envoyer
+            {isMobile ? '' : 'Envoyer'}
           </Button>
         </Box>
       </Box>
@@ -212,6 +311,8 @@ const CommentSection = ({ snippetId, currentUser, onClose }) => {
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth={isMobile}
       >
         <DialogTitle>Confirmer la suppression</DialogTitle>
         <DialogContent>
