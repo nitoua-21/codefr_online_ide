@@ -40,9 +40,9 @@ const CommentSection = ({ snippetId, currentUser, onClose }) => {
   const fetchComments = async () => {
     try {
       setLoading(true);
-      const snippet = await codeSnippetService.getSnippetById(snippetId);
-      console.log('Fetched snippet:', snippet); // Debug log
-      setComments(snippet.comments || []);
+      const response = await codeSnippetService.getSnippetById(snippetId);
+      console.log('Fetched snippet:', response);
+      setComments(response.snippet.comments || []);
       setError(null);
     } catch (err) {
       setError('Erreur lors du chargement des commentaires');
@@ -58,9 +58,10 @@ const CommentSection = ({ snippetId, currentUser, onClose }) => {
 
     try {
       setSubmitting(true);
-      await codeSnippetService.addComment(snippetId, newComment);
+      const response = await codeSnippetService.addComment(snippetId, newComment);
+      console.log('Added comment:', response);
       setNewComment('');
-      await fetchComments();
+      await fetchComments(); // Refresh comments after adding
       setError(null);
     } catch (err) {
       setError('Erreur lors de l\'ajout du commentaire');
@@ -80,8 +81,9 @@ const CommentSection = ({ snippetId, currentUser, onClose }) => {
 
     try {
       setSubmitting(true);
-      await codeSnippetService.deleteComment(snippetId, commentToDelete._id);
-      await fetchComments();
+      const response = await codeSnippetService.deleteComment(snippetId, commentToDelete._id);
+      console.log('Deleted comment:', response);
+      await fetchComments(); // Refresh comments after deleting
       setError(null);
     } catch (err) {
       setError('Erreur lors de la suppression du commentaire');
@@ -150,7 +152,7 @@ const CommentSection = ({ snippetId, currentUser, onClose }) => {
                       primary={
                         <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
                           <Typography component="span" variant="subtitle2">
-                            {comment.user?.username || 'Utilisateur inconnu'}
+                            {comment.author?.username || 'Utilisateur inconnu'}
                           </Typography>
                           <Typography component="span" variant="caption" color="text.secondary">
                             {comment.createdAt ? 
