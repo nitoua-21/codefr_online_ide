@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Box } from '@mui/material';
@@ -10,68 +10,51 @@ const MonacoEditor = ({ value, onChange, readOnly = false }) => {
   const { mode } = useTheme();
 
   useEffect(() => {
-    if (!monaco.languages.getLanguages().some(({ id }) => id === 'codefr')) {
-      registerCodeFrLanguage(monaco);
-    }
+    // Register language
+    registerCodeFrLanguage();
 
     if (containerRef.current && !editorRef.current) {
-      const model = monaco.editor.createModel(
-        value || '// Écrivez votre code CodeFr ici\n',
-        'codefr'
-      );
-
-      // Create editor
+      // Create editor instance
       editorRef.current = monaco.editor.create(containerRef.current, {
+        value: value || 'Algorithme Nom_Algorithme\nVariables\n\tVariable1: Type1\nDebut\n\tInstruction1\nFin',
         language: 'codefr',
-        model: model,
         theme: mode === 'dark' ? 'vs-dark' : 'vs',
         minimap: { enabled: true },
         fontSize: 14,
-        lineNumbers: 'on',
-        roundedSelection: true,
-        scrollBeyondLastLine: false,
-        readOnly: readOnly,
         automaticLayout: true,
+        lineNumbers: 'on',
+        readOnly: readOnly,
         tabSize: 2,
         wordWrap: 'on',
+        quickSuggestions: {
+          other: true,
+          comments: true,
+          strings: true
+        },
         suggestOnTriggerCharacters: true,
-        snippetSuggestions: 'inline',
-        quickSuggestions: true,
-        quickSuggestionsDelay: 0,
-        parameterHints: {
-          enabled: true
-        },
+        acceptSuggestionOnEnter: 'on',
+        tabCompletion: 'on',
+        wordBasedSuggestions: true,
+        snippetSuggestions: 'top',
         suggest: {
+          localityBonus: true,
           snippetsPreventQuickSuggestions: false,
-          showKeywords: true,
-          showSnippets: true,
-          showClasses: true,
-          showFunctions: true,
-          showVariables: true,
-          showConstants: true,
-          showOperators: true
-        },
-        scrollbar: {
-          useShadows: false,
-          verticalHasArrows: true,
-          horizontalHasArrows: true,
-          vertical: 'visible',
-          horizontal: 'visible',
-          verticalScrollbarSize: 10,
-          horizontalScrollbarSize: 10,
-        },
+          showIcons: true,
+          maxVisibleSuggestions: 12,
+          filterGraceful: true,
+          showInlineDetails: true,
+          preview: true
+        }
       });
 
       // Handle changes
-      const disposable = editorRef.current.onDidChangeModelContent(() => {
+      editorRef.current.onDidChangeModelContent(() => {
         if (onChange) {
           onChange(editorRef.current.getValue());
         }
       });
 
       return () => {
-        disposable.dispose();
-        model.dispose();
         if (editorRef.current) {
           editorRef.current.dispose();
           editorRef.current = null;

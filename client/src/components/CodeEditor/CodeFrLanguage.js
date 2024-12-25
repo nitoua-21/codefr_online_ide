@@ -1,4 +1,7 @@
-// Define keywords and tokens
+// CodeFrLanguage.js
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
+
+// Define keywords and tokens (keeping your existing definitions)
 const keywords = [
   'Algorithme', 'Debut', 'Fin',
   'Variable', 'Variables', 'Constante',
@@ -28,123 +31,79 @@ const operators = [
   '^', 'Mod', 'Et', 'Ou', 'Non', 'Oux'
 ];
 
-// Export language definition
-export const codeFrLanguage = {
-  ignoreCase: false,
-  defaultToken: '',
-  tokenPostfix: '.codefr',
-
-  keywords,
-  typeKeywords,
-  constants,
-  builtins,
-  operators,
-
-  // Symbols
-  symbols: /[=><!~?:&|+\-*\/\^%]+/,
-
-  // The main tokenizer for our languages
-  tokenizer: {
-    root: [
-      // Program structure - Fixed consecutive group matching
-      [/^(Algorithme)(\s+)([a-zA-Z_]\w*)/, ['keyword', 'white', 'identifier']],
-      [/^(Debut|Fin)/, 'keyword'],
-
-      // Identifiers and keywords
-      [/[a-zA-Z_]\w*/, {
-        cases: {
-          '@keywords': 'keyword',
-          '@typeKeywords': 'type',
-          '@constants': 'constant',
-          '@builtins': 'function',
-          '@default': 'identifier'
-        }
-      }],
-
-      // Whitespace
-      { include: '@whitespace' },
-
-      // Delimiters and operators
-      [/[{}()\[\]]/, '@brackets'],
-      [/[<>](?!@symbols)/, '@brackets'],
-      [/@symbols/, {
-        cases: {
-          '@operators': 'operator',
-          '@default': ''
-        }
-      }],
-
-      // Numbers
-      [/\d*\.\d+([eE][\-+]?\d+)?/, 'number.float'],
-      [/\d+/, 'number'],
-
-      // String
-      [/"([^"\\]|\\.)*$/, 'string.invalid'],
-      [/"/, { token: 'string.quote', bracket: '@open', next: '@string' }],
-    ],
-
-    comment: [
-      [/[^\/*]+/, 'comment'],
-      [/\/\*/, 'comment', '@push'],
-      ["\\*/", 'comment', '@pop'],
-      [/[\/*]/, 'comment']
-    ],
-
-    string: [
-      [/[^\\"]+/, 'string'],
-      [/"/, { token: 'string.quote', bracket: '@close', next: '@pop' }]
-    ],
-
-    whitespace: [
-      [/[ \t\r\n]+/, 'white'],
-      [/\/\*/, 'comment', '@comment'],
-      [/\/\/.*$/, 'comment'],
-    ],
-  }
-};
-
-// Export language configuration for editor
-export const codeFrConfig = {
-  comments: {
-    lineComment: '//',
-    blockComment: ['/*', '*/']
-  },
-  brackets: [
-    ['{', '}'],
-    ['[', ']'],
-    ['(', ')']
-  ],
-  autoClosingPairs: [
-    { open: '{', close: '}' },
-    { open: '[', close: ']' },
-    { open: '(', close: ')' },
-    { open: '"', close: '"', notIn: ['string'] },
-    { open: "'", close: "'", notIn: ['string', 'comment'] }
-  ],
-  surroundingPairs: [
-    { open: '{', close: '}' },
-    { open: '[', close: ']' },
-    { open: '(', close: ')' },
-    { open: '"', close: '"' },
-    { open: "'", close: "'" }
-  ],
-  folding: {
-    markers: {
-      start: new RegExp('^\\s*//\\s*#region\\b'),
-      end: new RegExp('^\\s*//\\s*#endregion\\b')
-    }
-  }
-};
+// Create completion items
+const createCompletionItem = (label, kind, insertText, documentation = '') => ({
+  label,
+  kind,
+  insertText,
+  documentation: { value: documentation },
+  insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+});
 
 // Register language
-export const registerCodeFrLanguage = (monaco) => {
+export const registerCodeFrLanguage = () => {
+  // Register the language first
   monaco.languages.register({ id: 'codefr' });
-  monaco.languages.setMonarchTokensProvider('codefr', codeFrLanguage);
-  monaco.languages.setLanguageConfiguration('codefr', codeFrConfig);
 
-  // Register completions provider
+  // Set the tokens provider
+  monaco.languages.setMonarchTokensProvider('codefr', {
+    ignoreCase: false,
+    defaultToken: '',
+    tokenPostfix: '.codefr',
+    keywords,
+    typeKeywords,
+    constants,
+    builtins,
+    operators,
+    symbols: /[=><!~?:&|+\-*\/\^%]+/,
+    
+    tokenizer: {
+      root: [
+        [/^(Algorithme)(\s+)([a-zA-Z_]\w*)/, ['keyword', 'white', 'identifier']],
+        [/^(Debut|Fin)/, 'keyword'],
+        [/[a-zA-Z_]\w*/, {
+          cases: {
+            '@keywords': 'keyword',
+            '@typeKeywords': 'type',
+            '@constants': 'constant',
+            '@builtins': 'function',
+            '@default': 'identifier'
+          }
+        }],
+        { include: '@whitespace' },
+        [/[{}()\[\]]/, '@brackets'],
+        [/[<>](?!@symbols)/, '@brackets'],
+        [/@symbols/, {
+          cases: {
+            '@operators': 'operator',
+            '@default': ''
+          }
+        }],
+        [/\d*\.\d+([eE][\-+]?\d+)?/, 'number.float'],
+        [/\d+/, 'number'],
+        [/"([^"\\]|\\.)*$/, 'string.invalid'],
+        [/"/, { token: 'string.quote', bracket: '@open', next: '@string' }],
+      ],
+      string: [
+        [/[^\\"]+/, 'string'],
+        [/"/, { token: 'string.quote', bracket: '@close', next: '@pop' }]
+      ],
+      whitespace: [
+        [/[ \t\r\n]+/, 'white'],
+        [/\/\*/, 'comment', '@comment'],
+        [/\/\/.*$/, 'comment'],
+      ],
+      comment: [
+        [/[^\/*]+/, 'comment'],
+        [/\/\*/, 'comment', '@push'],
+        ["\\*/", 'comment', '@pop'],
+        [/[\/*]/, 'comment']
+      ],
+    }
+  });
+
+  // Register completion item provider
   monaco.languages.registerCompletionItemProvider('codefr', {
-    triggerCharacters: [' ', '\n', ':', '.', '(', '['],
     provideCompletionItems: (model, position) => {
       const word = model.getWordUntilPosition(position);
       const range = {
@@ -155,134 +114,83 @@ export const registerCodeFrLanguage = (monaco) => {
       };
 
       const suggestions = [
-        {
-          label: 'Algorithme',
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: [
-            'Algorithme ${1:nom}',
-            'Variables',
-            '\t${2}',
-            'Debut',
-            '\t${3}',
-            'Fin'
-          ].join('\n'),
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Structure de base d\'un algorithme',
-          range: range
-        },
-        {
-          label: 'Variable',
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: 'Variable ${1:nom}: ${2:type}',
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Déclaration d\'une variable',
-          range: range
-        },
-        {
-          label: 'Variables',
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: 'Variables ${1:nom1}, ${2:nom2}: ${3:type}',
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Déclaration de plusieurs variables',
-          range: range
-        },
-        {
-          label: 'Si',
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: [
-            'Si ${1:condition} Alors',
-            '\t${2}',
-            'FinSi'
-          ].join('\n'),
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Structure conditionnelle Si',
-          range: range
-        },
-        {
-          label: 'SiComplet',
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: [
-            'Si ${1:condition} Alors',
-            '\t${2}',
-            'SinonSi ${3:condition} Alors',
-            '\t${4}',
-            'Sinon',
-            '\t${5}',
-            'FinSi'
-          ].join('\n'),
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Structure conditionnelle Si complète',
-          range: range
-        },
-        {
-          label: 'Pour',
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: [
-            'Pour ${1:i} De ${2:debut} A ${3:fin} Faire',
-            '\t${4}',
-            'FinPour'
-          ].join('\n'),
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Boucle Pour',
-          range: range
-        },
-        {
-          label: 'TantQue',
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: [
-            'TantQue ${1:condition} Faire',
-            '\t${2}',
-            'FinTantQue'
-          ].join('\n'),
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Boucle TantQue',
-          range: range
-        },
-        {
-          label: 'Tableau',
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: 'Tableau ${1:nom}[${2:taille}]: ${3:type}',
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Déclaration d\'un tableau',
-          range: range
-        },
-        {
-          label: 'Tableau2D',
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: 'Tableau ${1:nom}[${2:lignes}][${3:colonnes}]: ${4:type}',
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Déclaration d\'un tableau à deux dimensions',
-          range: range
-        },
-        {
-          label: 'Lire',
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: 'Lire(${1:variable})',
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Lecture d\'une entrée',
-          range: range
-        },
-        {
-          label: 'Ecrire',
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: 'Ecrire(${1:expression})',
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          documentation: 'Affichage d\'une sortie',
-          range: range
-        }
+        // Keywords
+        ...keywords.map(keyword => 
+          createCompletionItem(keyword, monaco.languages.CompletionItemKind.Keyword, keyword)
+        ),
+        // Types
+        ...typeKeywords.map(type => 
+          createCompletionItem(type, monaco.languages.CompletionItemKind.Class, type)
+        ),
+        // Constants
+        ...constants.map(constant => 
+          createCompletionItem(constant, monaco.languages.CompletionItemKind.Constant, constant)
+        ),
+        // Built-in functions
+        ...builtins.map(func => 
+          createCompletionItem(func, monaco.languages.CompletionItemKind.Function, func)
+        ),
+        // Snippets
+        createCompletionItem(
+          'Algorithme',
+          monaco.languages.CompletionItemKind.Snippet,
+          'Algorithme ${1:nom}\nVariables\n\t${2}\nDebut\n\t${3}\nFin',
+          'Structure de base d\'un algorithme'
+        ),
+        createCompletionItem(
+          'Si',
+          monaco.languages.CompletionItemKind.Snippet,
+          'Si ${1:condition} Alors\n\t${2}\nFinSi',
+          'Structure conditionnelle Si'
+        ),
+        createCompletionItem(
+          'Pour',
+          monaco.languages.CompletionItemKind.Snippet,
+          'Pour ${1:i} De ${2:debut} A ${3:fin} Faire\n\t${4}\nFinPour',
+          'Boucle Pour'
+        ),
+        createCompletionItem(
+          'TantQue',
+          monaco.languages.CompletionItemKind.Snippet,
+          'TantQue ${1:condition} Faire\n\t${2}\nFinTantQue',
+          'Boucle TantQue'
+        )
       ];
 
-      // Add keyword suggestions
-      const keywordSuggestions = [...keywords, ...typeKeywords, ...constants, ...builtins].map(keyword => ({
-        label: keyword,
-        kind: monaco.languages.CompletionItemKind.Keyword,
-        insertText: keyword,
-        range: range
-      }));
-
       return {
-        suggestions: [...suggestions, ...keywordSuggestions]
+        suggestions: suggestions.map(s => ({
+          ...s,
+          range: range
+        }))
       };
-    }
+    },
+    triggerCharacters: [' ', '\n', ':', '.', '(', '[', 'A']
+  });
+
+  // Register language configuration
+  monaco.languages.setLanguageConfiguration('codefr', {
+    comments: {
+      lineComment: '//',
+      blockComment: ['/*', '*/']
+    },
+    brackets: [
+      ['{', '}'],
+      ['[', ']'],
+      ['(', ')']
+    ],
+    autoClosingPairs: [
+      { open: '{', close: '}' },
+      { open: '[', close: ']' },
+      { open: '(', close: ')' },
+      { open: '"', close: '"', notIn: ['string'] },
+      { open: "'", close: "'", notIn: ['string', 'comment'] }
+    ],
+    surroundingPairs: [
+      { open: '{', close: '}' },
+      { open: '[', close: ']' },
+      { open: '(', close: ')' },
+      { open: '"', close: '"' },
+      { open: "'", close: "'" }
+    ],
   });
 };

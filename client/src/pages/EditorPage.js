@@ -36,19 +36,7 @@ import MonacoEditor from '../components/CodeEditor/MonacoEditor';
 import executionService from '../services/executionService';
 import codeSnippetService from '../services/codeSnippetService';
 
-const DEFAULT_CODE = `Algorithme ExempleSimple
-Variable x: Entier
-Variable y: Entier
-Debut
-    x = 10
-    y = 5
-    
-    Si x > y Alors
-        Ecrire("x est plus grand que y")
-    Sinon
-        Ecrire("y est plus grand ou égal à x")
-    FinSi
-Fin`;
+const DEFAULT_CODE = `Algorithme Nom_Algorithme\n\nVariable1: Type1\nVariable2: Type2\n\nDebut\n\tInstruction1\n\tInstruction2\nFin`;
 
 const EditorPage = () => {
   const { isAuthenticated, user } = useAuth();
@@ -360,7 +348,6 @@ const EditorPage = () => {
               <MonacoEditor
                 value={code}
                 onChange={setCode}
-                language="codefr"
               />
             </Box>
           </Paper>
