@@ -41,6 +41,7 @@ const CommentSection = ({ snippetId, currentUser, onClose }) => {
     try {
       setLoading(true);
       const snippet = await codeSnippetService.getSnippetById(snippetId);
+      console.log('Fetched snippet:', snippet); // Debug log
       setComments(snippet.comments || []);
       setError(null);
     } catch (err) {
@@ -93,7 +94,7 @@ const CommentSection = ({ snippetId, currentUser, onClose }) => {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       <Box sx={{ 
         p: 2, 
         borderBottom: 1, 
@@ -111,86 +112,77 @@ const CommentSection = ({ snippetId, currentUser, onClose }) => {
         </Paper>
       )}
 
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <List sx={{ flex: 1, overflow: 'auto', px: 2 }}>
-          {comments.length === 0 ? (
-            <Typography color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
-              Aucun commentaire pour le moment
-            </Typography>
-          ) : (
-            comments.map((comment) => (
-              <React.Fragment key={comment._id}>
-                <ListItem
-                  alignItems="flex-start"
-                  secondaryAction={
-                    currentUser && currentUser._id === comment.user._id && (
-                      <IconButton
-                        edge="end"
-                        aria-label="supprimer"
-                        onClick={() => openDeleteDialog(comment)}
-                        disabled={submitting}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    )
-                  }
-                >
-                  <ListItemAvatar>
-                    <Avatar sx={{ bgcolor: 'primary.main' }}>
-                      {comment.user.username[0].toUpperCase()}
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={
-                      <Typography component="span" variant="subtitle2">
-                        {comment.user.username}
-                      </Typography>
-                    }
-                    secondary={
-                      <>
-                        <Typography
-                          component="span"
-                          variant="body2"
-                          color="text.primary"
-                          sx={{ display: 'block', my: 0.5 }}
+      <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <List sx={{ flex: 1, overflow: 'auto', px: 2 }}>
+            {comments.length === 0 ? (
+              <Typography color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
+                Aucun commentaire pour le moment
+              </Typography>
+            ) : (
+              comments.map((comment, index) => (
+                <React.Fragment key={comment._id || index}>
+                  <ListItem
+                    alignItems="flex-start"
+                    secondaryAction={
+                      currentUser && comment.user && currentUser._id === comment.user._id && (
+                        <IconButton
+                          edge="end"
+                          aria-label="supprimer"
+                          onClick={() => openDeleteDialog(comment)}
+                          disabled={submitting}
                         >
-                          {comment.content}
-                        </Typography>
-                        <Typography
-                          component="span"
-                          variant="caption"
-                          color="text.secondary"
-                        >
-                          {formatDistanceToNow(new Date(comment.createdAt), {
-                            addSuffix: true,
-                            locale: fr
-                          })}
-                        </Typography>
-                      </>
+                          <DeleteIcon />
+                        </IconButton>
+                      )
                     }
-                  />
-                </ListItem>
-                <Divider variant="inset" component="li" />
-              </React.Fragment>
-            ))
-          )}
-        </List>
-      )}
+                  >
+                    <ListItemAvatar>
+                      <Avatar sx={{ bgcolor: 'primary.main' }}>
+                        {comment.user?.username?.[0]?.toUpperCase() || '?'}
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                          <Typography component="span" variant="subtitle2">
+                            {comment.user?.username || 'Utilisateur inconnu'}
+                          </Typography>
+                          <Typography component="span" variant="caption" color="text.secondary">
+                            {comment.createdAt ? 
+                              formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: fr }) :
+                              'Date inconnue'
+                            }
+                          </Typography>
+                        </Box>
+                      }
+                      secondary={comment.content}
+                      secondaryTypographyProps={{
+                        sx: { whiteSpace: 'pre-wrap', mt: 0.5 }
+                      }}
+                    />
+                  </ListItem>
+                  {index < comments.length - 1 && <Divider variant="inset" component="li" />}
+                </React.Fragment>
+              ))
+            )}
+          </List>
+        )}
+      </Box>
 
-      <Paper
+      <Box
         component="form"
         onSubmit={handleAddComment}
         sx={{
           p: 2,
           borderTop: 1,
           borderColor: 'divider',
-          bgcolor: 'background.default'
+          bgcolor: 'background.paper',
         }}
-        elevation={0}
       >
         <Box sx={{ display: 'flex', gap: 1 }}>
           <TextField
@@ -204,32 +196,25 @@ const CommentSection = ({ snippetId, currentUser, onClose }) => {
             maxRows={4}
           />
           <Button
-            variant="contained"
-            endIcon={submitting ? <CircularProgress size={20} /> : <SendIcon />}
             type="submit"
+            variant="contained"
             disabled={submitting || !newComment.trim() || !currentUser}
+            sx={{ minWidth: 100 }}
+            endIcon={<SendIcon />}
           >
             Envoyer
           </Button>
         </Box>
-        {!currentUser && (
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-            Connectez-vous pour commenter
-          </Typography>
-        )}
-      </Paper>
+      </Box>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
-        maxWidth="xs"
-        fullWidth
       >
-        <DialogTitle>Supprimer le commentaire ?</DialogTitle>
+        <DialogTitle>Confirmer la suppression</DialogTitle>
         <DialogContent>
           <Typography>
-            Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action est irréversible.
+            Êtes-vous sûr de vouloir supprimer ce commentaire ?
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -243,9 +228,8 @@ const CommentSection = ({ snippetId, currentUser, onClose }) => {
             onClick={handleDeleteComment}
             color="error"
             disabled={submitting}
-            variant="contained"
           >
-            {submitting ? <CircularProgress size={24} /> : 'Supprimer'}
+            Supprimer
           </Button>
         </DialogActions>
       </Dialog>

@@ -345,16 +345,22 @@ const EditorPage = () => {
 
             {/* Comments Section */}
             {snippetId && (
-              <Box sx={{ flex: 1 }}>
-              <Paper
-              sx={{ display: 'flex', flexDirection: 'column', ml: 1 }}
-              >
-                <CommentSection
-                  snippetId={snippetId}
-                  currentUser={user}
-                  onClose={() => setShowComments(true)}
-                />
-              </Paper>
+              <Box sx={{ flex: 1, minWidth: 350, maxWidth: 400 }}>
+                <Paper
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    ml: 1,
+                    overflow: 'hidden'
+                  }}
+                >
+                  <CommentSection
+                    snippetId={snippetId}
+                    currentUser={user}
+                    onClose={() => {}}
+                  />
+                </Paper>
               </Box>
             )}
           </Box>
