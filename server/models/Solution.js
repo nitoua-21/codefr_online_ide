@@ -38,7 +38,7 @@ const solutionSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'running', 'accepted', 'wrong_answer', 'time_limit', 'memory_limit', 'runtime_error', 'compilation_error'],
+    enum: ['pending', 'running', 'approved', 'rejected', 'wrong_answer', 'time_limit', 'memory_limit', 'runtime_error', 'compilation_error'],
     default: 'pending'
   },
   score: {

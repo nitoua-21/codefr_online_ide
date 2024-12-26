@@ -197,4 +197,49 @@ router.post('/challenge/:challengeId', auth, async (req, res) => {
   }
 });
 
+// Update solution status (challenge author only)
+router.put('/:id/status', auth, async (req, res) => {
+  try {
+    const { status } = req.body;
+    
+    if (!['pending', 'approved', 'rejected'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid status value'
+      });
+    }
+
+    const solution = await Solution.findById(req.params.id);
+    if (!solution) {
+      return res.status(404).json({
+        success: false,
+        error: 'Solution not found'
+      });
+    }
+
+    // Check if user is challenge author
+    const challenge = await Challenge.findById(solution.challenge);
+    if (!challenge.author.equals(req.user._id)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to update solution status'
+      });
+    }
+
+    solution.status = status;
+    await solution.save();
+
+    res.json({
+      success: true,
+      solution
+    });
+  } catch (error) {
+    console.error('Update solution status error:', error);
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;
