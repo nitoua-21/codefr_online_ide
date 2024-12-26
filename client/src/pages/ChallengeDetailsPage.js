@@ -70,6 +70,8 @@ const ChallengeDetailsPage = () => {
   const [loadingComments, setLoadingComments] = useState(false);
   const [solutionCode, setSolutionCode] = useState('');
   const [submittingSolution, setSubmittingSolution] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setError] = useState('');
 
   useEffect(() => {
     const fetchChallenge = async () => {
@@ -168,6 +170,72 @@ const ChallengeDetailsPage = () => {
     } finally {
       setSubmittingSolution(false);
     }
+  };
+
+  const handleUpdateSolutionStatus = async (solutionId, newStatus) => {
+    try {
+      await challengeService.updateSolutionStatus(id, solutionId, newStatus);
+      // Refresh solutions list
+      const updatedChallenge = await getChallenge(id);
+      setChallenge(updatedChallenge);
+      setSuccessMessage(`Statut de la solution mis à jour avec succès`);
+    } catch (err) {
+      setError(err.message || 'Erreur lors de la mise à jour du statut');
+      console.error('Update solution status error:', err);
+    }
+  };
+
+  const renderSolutionStatus = (solution) => {
+    if (!canManageChallenge()) {
+      return (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {solution.status === 'approved' ? (
+            <Chip
+              icon={<ThumbUpIcon />}
+              label="Approuvée"
+              color="success"
+              size="small"
+            />
+          ) : solution.status === 'rejected' ? (
+            <Chip
+              icon={<ThumbDownIcon />}
+              label="Rejetée"
+              color="error"
+              size="small"
+            />
+          ) : (
+            <Chip
+              label="En attente"
+              color="default"
+              size="small"
+            />
+          )}
+        </Box>
+      );
+    }
+
+    return (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Tooltip title="Approuver">
+          <IconButton
+            size="small"
+            color={solution.status === 'approved' ? 'success' : 'default'}
+            onClick={() => handleUpdateSolutionStatus(solution._id, 'approved')}
+          >
+            <ThumbUpIcon />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Rejeter">
+          <IconButton
+            size="small"
+            color={solution.status === 'rejected' ? 'error' : 'default'}
+            onClick={() => handleUpdateSolutionStatus(solution._id, 'rejected')}
+          >
+            <ThumbDownIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    );
   };
 
   if (loading) {
@@ -350,11 +418,7 @@ const ChallengeDetailsPage = () => {
                               </Typography>
                             </Grid>
                             <Grid item>
-                              <Chip
-                                label={solution.status}
-                                color={solution.status === 'accepted' ? 'success' : 'error'}
-                                size="small"
-                              />
+                              {renderSolutionStatus(solution)}
                             </Grid>
                           </Grid>
                         </AccordionSummary>

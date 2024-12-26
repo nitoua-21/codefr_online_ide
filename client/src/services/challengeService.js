@@ -150,7 +150,17 @@ const challengeService = {
     } catch (error) {
       throw handleApiError(error);
     }
-  }
+  },
+
+  // Update solution status
+  updateSolutionStatus: async (challengeId, solutionId, status) => {
+    try {
+      const response = await api.put(`/challenges/${challengeId}/solutions/${solutionId}/status`, { status });
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
 };
 
 export default challengeService;

@@ -364,4 +364,40 @@ router.post('/:id/fork', auth, async (req, res) => {
   }
 });
 
+// Toggle star on a snippet
+router.post('/:id/star', auth, async (req, res) => {
+  try {
+    const snippet = await CodeSnippet.findById(req.params.id);
+    if (!snippet) {
+      return res.status(404).json({
+        success: false,
+        error: 'Snippet not found'
+      });
+    }
+
+    const userIndex = snippet.stars.indexOf(req.user._id);
+    if (userIndex === -1) {
+      // Add star
+      snippet.stars.push(req.user._id);
+    } else {
+      // Remove star
+      snippet.stars.splice(userIndex, 1);
+    }
+
+    await snippet.save();
+
+    res.json({
+      success: true,
+      isStarred: userIndex === -1, // Returns true if star was added, false if removed
+      message: userIndex === -1 ? 'Snippet starred' : 'Snippet unstarred'
+    });
+  } catch (error) {
+    console.error('Toggle star error:', error);
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;

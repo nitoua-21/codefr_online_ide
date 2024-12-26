@@ -127,6 +127,17 @@ const codeSnippetService = {
       console.error('Fork snippet error:', error);
       throw error.response?.data?.error || 'Error forking snippet';
     }
+  },
+
+  // Toggle star on a snippet
+  toggleStar: async (id) => {
+    try {
+      const response = await api.post(`/code-snippets/${id}/star`);
+      return response.data;
+    } catch (error) {
+      console.error('Toggle star error:', error);
+      throw error.response?.data?.error || 'Error toggling star';
+    }
   }
 };
 

@@ -156,9 +156,13 @@ const EditorPage = () => {
     }
 
     try {
-      await codeSnippetService.toggleStar(snippetId);
-      setIsStarred(!isStarred);
-      setSuccessMessage(isStarred ? 'Snippet retiré des favoris' : 'Snippet ajouté aux favoris');
+      const response = await codeSnippetService.toggleStar(snippetId);
+      if (response.success) {
+        setIsStarred(response.isStarred);
+        setSuccessMessage(response.message);
+      } else {
+        setError(response.error || 'Erreur lors de l\'ajout/retrait des favoris');
+      }
     } catch (err) {
       setError(err.message || 'Erreur lors de l\'ajout/retrait des favoris');
       console.error('Star error:', err);
