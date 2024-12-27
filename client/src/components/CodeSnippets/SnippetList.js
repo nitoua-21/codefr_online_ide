@@ -30,7 +30,9 @@ import {
 const SnippetCard = ({ snippet, onDelete }) => {
   const navigate = useNavigate();
   const theme = useTheme();
-  const { title, description, tags, isPublic, likes, comments, createdAt, author } = snippet;
+  const { title, description, tags, isPublic, starCount, comments, createdAt, author } = snippet;
+
+  console.log(snippet);
 
   const handleEdit = () => {
     navigate(`/editor/${snippet._id}`);
@@ -142,7 +144,7 @@ const SnippetCard = ({ snippet, onDelete }) => {
           <Box display="flex" alignItems="center" gap={0.5}>
             <StarIcon fontSize="small" color="warning" />
             <Typography variant="body2">
-              {likes?.length || 0}
+              {starCount}
             </Typography>
           </Box>
           <Box display="flex" alignItems="center" gap={0.5}>
