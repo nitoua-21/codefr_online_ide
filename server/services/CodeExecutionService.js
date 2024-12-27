@@ -93,6 +93,7 @@ class CodeExecutionService {
       });
 
       process.on('error', (error) => {
+        console.error('Error executing code:', error);
         reject(error);
       });
 

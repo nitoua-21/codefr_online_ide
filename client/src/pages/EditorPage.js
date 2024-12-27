@@ -102,7 +102,7 @@ const EditorPage = () => {
 
       const result = await executionService.executeCode(code, input);
 
-      if (result.success) {
+      if (result.success && result.error?.length === 0) {
         setOutput(result.output);
       } else {
         setError(result.error || 'Échec de l\'exécution');
@@ -333,11 +333,12 @@ const EditorPage = () => {
                 minWidth: 0 // Prevent flex items from overflowing
               }}
             >
+              {console.log('ReadOnly:', Boolean(snippetId) && (user?.username !== snippetAuthor?.username))}
               <Box sx={{ flex: 1, overflow: 'hidden' }}>
                 <MonacoEditor
                   value={code}
                   onChange={setCode}
-                  readOnly={ user?.username !== snippetAuthor?.username}
+                  readOnly={ Boolean(snippetId) && (user?.username !== snippetAuthor?.username)}
                 />
               </Box>
 
