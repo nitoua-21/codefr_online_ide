@@ -1,5 +1,23 @@
-import React from 'react';
-import { AppBar, Box, Toolbar, Typography, Button, Container, Avatar, Menu, MenuItem, IconButton } from '@mui/material';
+import React, { useState } from 'react';
+import { 
+  AppBar, 
+  Box, 
+  Toolbar, 
+  Typography, 
+  Button, 
+  Container, 
+  Avatar, 
+  Menu, 
+  MenuItem, 
+  IconButton,
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  ListItemButton,
+  Divider
+} from '@mui/material';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -28,7 +46,12 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
   const { mode, toggleTheme } = useTheme();
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
 
   const handleOpenMenu = (event) => {
     setAnchorEl(event.currentTarget);
@@ -44,10 +67,76 @@ const Navbar = () => {
     navigate('/');
   };
 
+  const drawer = (
+    <Box sx={{ width: 250 }} role="presentation" onClick={handleDrawerToggle}>
+      <List>
+        {pages.map((page) => (
+          (!page.requiresAuth || isAuthenticated) && (
+            <ListItem key={page.path} disablePadding>
+              <ListItemButton
+                component={RouterLink}
+                to={page.path}
+                selected={location.pathname === page.path}
+              >
+                <ListItemIcon>
+                  {page.icon}
+                </ListItemIcon>
+                <ListItemText primary={page.name} />
+              </ListItemButton>
+            </ListItem>
+          )
+        ))}
+      </List>
+      <Divider />
+      {isAuthenticated ? (
+        <List>
+          <ListItem disablePadding>
+            <ListItemButton onClick={() => { navigate('/profile'); handleDrawerToggle(); }}>
+              <ListItemIcon>
+                <AccountCircleIcon />
+              </ListItemIcon>
+              <ListItemText primary="Mon profil" />
+            </ListItemButton>
+          </ListItem>
+          <ListItem disablePadding>
+            <ListItemButton onClick={() => { handleLogout(); handleDrawerToggle(); }}>
+              <ListItemText primary="Se déconnecter" />
+            </ListItemButton>
+          </ListItem>
+        </List>
+      ) : (
+        <List>
+          <ListItem disablePadding>
+            <ListItemButton component={RouterLink} to="/login" onClick={handleDrawerToggle}>
+              <ListItemText primary="Se connecter" />
+            </ListItemButton>
+          </ListItem>
+          <ListItem disablePadding>
+            <ListItemButton component={RouterLink} to="/signup" onClick={handleDrawerToggle}>
+              <ListItemText primary="S'inscrire" />
+            </ListItemButton>
+          </ListItem>
+        </List>
+      )}
+    </Box>
+  );
+
   return (
     <AppBar position="sticky" sx={{ bgcolor: 'background.paper' }}>
       <Container maxWidth="xl">
         <Toolbar disableGutters>
+          {/* Mobile Menu Icon */}
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2, display: { md: 'none' } }}
+          >
+            <MenuIcon />
+          </IconButton>
+
+          {/* Logo */}
           <CodeIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }} />
           <Typography
             variant="h6"
@@ -65,7 +154,26 @@ const Navbar = () => {
             CodeFr
           </Typography>
 
-          <Box sx={{ flexGrow: 1, display: 'flex', gap: 2 }}>
+          {/* Mobile Logo */}
+          <Typography
+            variant="h6"
+            noWrap
+            component={RouterLink}
+            to="/"
+            sx={{
+              mr: 2,
+              display: { xs: 'flex', md: 'none' },
+              flexGrow: 1,
+              fontWeight: 700,
+              color: 'inherit',
+              textDecoration: 'none',
+            }}
+          >
+            CodeFr
+          </Typography>
+
+          {/* Desktop Navigation */}
+          <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, gap: 2 }}>
             {pages.map((page) => (
               (!page.requiresAuth || isAuthenticated) && (
                 <Button
@@ -100,10 +208,10 @@ const Navbar = () => {
             ))}
           </Box>
 
+          {/* Theme Toggle and User Menu */}
           <Box sx={{ flexGrow: 0 }}>
-            {isAuthenticated ? (
+            {isAuthenticated && (
               <>
-                {/* Theme Toggle */}
                 <IconButton
                   color="inherit"
                   onClick={toggleTheme}
@@ -126,8 +234,7 @@ const Navbar = () => {
                   </AnimatePresence>
                 </IconButton>
 
-                {/* User Menu */}
-                <IconButton onClick={handleOpenMenu} sx={{ p: 0 }}>
+                <IconButton onClick={handleOpenMenu} sx={{ p: 0, ml: 1 }}>
                   {user?.avatar ? (
                     <Avatar sx={{ bgcolor: 'primary.main' }}>
                       {user.avatar}
@@ -160,8 +267,11 @@ const Navbar = () => {
                   </MenuItem>
                 </Menu>
               </>
-            ) : (
-              <Box sx={{ display: 'flex', gap: 1 }}>
+            )}
+
+            {/* Desktop Login/Signup Buttons */}
+            {!isAuthenticated && (
+              <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1 }}>
                 <Button
                   component={RouterLink}
                   to="/login"
@@ -183,6 +293,23 @@ const Navbar = () => {
           </Box>
         </Toolbar>
       </Container>
+
+      {/* Mobile Drawer */}
+      <Drawer
+        variant="temporary"
+        anchor="left"
+        open={mobileOpen}
+        onClose={handleDrawerToggle}
+        ModalProps={{
+          keepMounted: true, // Better open performance on mobile.
+        }}
+        sx={{
+          display: { xs: 'block', md: 'none' },
+          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 250 },
+        }}
+      >
+        {drawer}
+      </Drawer>
     </AppBar>
   );
 };

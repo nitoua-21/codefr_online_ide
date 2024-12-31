@@ -20,6 +20,8 @@ import SettingsPage from './pages/SettingsPage';
 import ChallengeDetailsPage from './pages/ChallengeDetailsPage';
 import DashboardPage from './pages/DashboardPage';
 import DocsPage from './pages/DocsPage';
+import Footer from './components/Footer';
+import { Box } from '@mui/material';
 
 const getTheme = (mode) => createTheme({
   palette: {
@@ -141,54 +143,61 @@ const ThemedApp = () => {
       <CssBaseline />
       <AuthProvider>
         <ChallengesProvider>
-          <div className="App">
+          <div className="App" style={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            minHeight: '100vh'
+          }}>
             <Navbar />
-            <AnimatePresence mode="wait">
-              <Routes location={location} key={location.pathname}>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/signup" element={<SignupPage />} />
-                <Route path="/editor" element={<EditorPage />} />
-                <Route path="/editor/:id" element={<EditorPage />} />
+            <Box sx={{ flex: 1 }}>
+              <AnimatePresence mode="wait">
+                <Routes location={location} key={location.pathname}>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/signup" element={<SignupPage />} />
+                  <Route path="/editor" element={<EditorPage />} />
+                  <Route path="/editor/:id" element={<EditorPage />} />
 
-                {/* Protected Routes */}
-                <Route path="/challenges" element={
-                  <ProtectedRoute>
-                    <ChallengesPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/challenges/:id" element={
-                  <ProtectedRoute>
-                    <ChallengeDetailsPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/community" element={
-                  <ProtectedRoute>
-                    <CommunityPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/docs" element={
-                  <ProtectedRoute>
-                    <DocsPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <DashboardPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/profile" element={
-                  <ProtectedRoute>
-                    <ProfilePage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/settings" element={
-                  <ProtectedRoute>
-                    <SettingsPage />
-                  </ProtectedRoute>
-                } />
-              </Routes>
-            </AnimatePresence>
+                  {/* Protected Routes */}
+                  <Route path="/challenges" element={
+                    <ProtectedRoute>
+                      <ChallengesPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/challenges/:id" element={
+                    <ProtectedRoute>
+                      <ChallengeDetailsPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/community" element={
+                    <ProtectedRoute>
+                      <CommunityPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/docs" element={
+                    <ProtectedRoute>
+                      <DocsPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/dashboard" element={
+                    <ProtectedRoute>
+                      <DashboardPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/profile" element={
+                    <ProtectedRoute>
+                      <ProfilePage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/settings" element={
+                    <ProtectedRoute>
+                      <SettingsPage />
+                    </ProtectedRoute>
+                  } />
+                </Routes>
+              </AnimatePresence>
+            </Box>
+            <Footer />
           </div>
         </ChallengesProvider>
       </AuthProvider>
