@@ -19,6 +19,7 @@ import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import ChallengeDetailsPage from './pages/ChallengeDetailsPage';
 import DashboardPage from './pages/DashboardPage';
+import DocsPage from './pages/DocsPage';
 
 const getTheme = (mode) => createTheme({
   palette: {
@@ -166,9 +167,9 @@ const ThemedApp = () => {
                     <CommunityPage />
                   </ProtectedRoute>
                 } />
-                <Route path="/learn" element={
+                <Route path="/docs" element={
                   <ProtectedRoute>
-                    <LearnPage />
+                    <DocsPage />
                   </ProtectedRoute>
                 } />
                 <Route path="/dashboard" element={

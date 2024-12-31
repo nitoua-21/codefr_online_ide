@@ -216,10 +216,10 @@ const EditorPage = () => {
                   </Typography>
                   {snippetAuthor && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Avatar 
-                        sx={{ 
-                          width: 24, 
-                          height: 24, 
+                      <Avatar
+                        sx={{
+                          width: 24,
+                          height: 24,
                           bgcolor: 'primary.main',
                           fontSize: '0.875rem'
                         }}
@@ -233,7 +233,7 @@ const EditorPage = () => {
                   )}
                 </Box>
               )}
-              
+
               <TextField
                 label="Titre"
                 value={snippetData.title}
@@ -282,7 +282,7 @@ const EditorPage = () => {
                     variant="outlined"
                     startIcon={<SaveIcon />}
                     onClick={handleSaveCode}
-                    disabled={!isAuthenticated || user?.username !== snippetAuthor?.username}
+                    disabled={(isAuthenticated && Boolean(snippetId)) || !isAuthenticated || (Boolean(snippetId) && user?.username !== snippetAuthor?.username)}
                   >
                     Sauvegarder
                   </Button>
@@ -324,21 +324,20 @@ const EditorPage = () => {
           {/* Main Content */}
           <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
             {/* Editor Section */}
-            <Box 
-              sx={{ 
-                flex: { xs: 1, md: 2 }, 
-                display: 'flex', 
-                flexDirection: 'column', 
+            <Box
+              sx={{
+                flex: { xs: 1, md: 2 },
+                display: 'flex',
+                flexDirection: 'column',
                 overflow: 'hidden',
                 minWidth: 0 // Prevent flex items from overflowing
               }}
             >
-              {console.log('ReadOnly:', Boolean(snippetId) && (user?.username !== snippetAuthor?.username))}
               <Box sx={{ flex: 1, overflow: 'hidden' }}>
                 <MonacoEditor
                   value={code}
                   onChange={setCode}
-                  readOnly={ Boolean(snippetId) && (user?.username !== snippetAuthor?.username)}
+                  readOnly={Boolean(snippetId) && (user?.username !== snippetAuthor?.username)}
                 />
               </Box>
 
@@ -381,8 +380,8 @@ const EditorPage = () => {
 
             {/* Comments Section */}
             {snippetId && (
-              <Box 
-                sx={{ 
+              <Box
+                sx={{
                   width: { xs: '100%', md: 350 },
                   display: { xs: showComments ? 'flex' : 'none', md: 'flex' },
                   position: { xs: 'absolute', md: 'relative' },

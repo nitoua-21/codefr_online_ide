@@ -19,7 +19,7 @@ const pages = [
   { name: 'Tableau de bord', path: '/dashboard', icon: <DashboardIcon sx={{ mr: 0.5 }} />, requiresAuth: true },
   { name: 'Éditeur', path: '/editor', icon: <CodeIcon sx={{ mr: 0.5 }} />, requiresAuth: true },
   { name: 'Défis', path: '/challenges', icon: <EmojiEventsIcon sx={{ mr: 0.5 }} />, requiresAuth: true },
-  { name: 'Apprendre', path: '/learn', icon: <SchoolIcon sx={{ mr: 0.5 }} />, requiresAuth: true },
+  { name: 'Documentation', path: '/docs', icon: <SchoolIcon sx={{ mr: 0.5 }} />, requiresAuth: true },
   { name: 'Communauté', path: '/community', icon: <GroupIcon sx={{ mr: 0.5 }} />, requiresAuth: true },
 ];
 
