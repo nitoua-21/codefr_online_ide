@@ -33,13 +33,7 @@ const Footer = () => {
           <Box>
             <Typography variant="body2" color="text.secondary" align="center">
               {'Copyright © '}
-              <Link color="inherit" href="https://github.com/nitoua-21/CodeFr">
-                CodeFr
-              </Link>{' '}
-              {currentYear}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" align="center">
-              Créé par Nitoua Adrien
+                CodeFr 2024
             </Typography>
           </Box>
 
