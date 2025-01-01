@@ -84,6 +84,8 @@ const Hero = () => {
                 Essayer
               </Button>
               <Button
+                component={RouterLink}
+                to="/about"
                 variant="outlined"
                 size="large"
                 startIcon={<InfoIcon />}

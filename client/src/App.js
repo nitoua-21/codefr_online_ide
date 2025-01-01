@@ -21,6 +21,7 @@ import ChallengeDetailsPage from './pages/ChallengeDetailsPage';
 import DashboardPage from './pages/DashboardPage';
 import DocsPage from './pages/DocsPage';
 import Footer from './components/Footer';
+import AboutPage from './pages/AboutPage';
 import { Box } from '@mui/material';
 
 const getTheme = (mode) => createTheme({
@@ -153,6 +154,7 @@ const ThemedApp = () => {
               <AnimatePresence mode="wait">
                 <Routes location={location} key={location.pathname}>
                   <Route path="/" element={<HomePage />} />
+                  <Route path="/about" element={<AboutPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/signup" element={<SignupPage />} />
                   <Route path="/editor" element={<EditorPage />} />
