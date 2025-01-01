@@ -32,6 +32,7 @@ import DarkModeIcon from '@mui/icons-material/DarkMode';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import InfoIcon from '@mui/icons-material/Info';
 import { motion, AnimatePresence } from 'framer-motion';
+import logo from '../assets/logo.svg';
 
 const pages = [
   { name: 'Accueil', path: '/' },
@@ -138,7 +139,17 @@ const Navbar = () => {
           </IconButton>
 
           {/* Logo */}
-          <CodeIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }} />
+          <Box 
+            component="img"
+            src={logo}
+            alt="CodeFR Logo"
+            sx={{ 
+              display: { xs: 'none', md: 'flex' },
+              mr: 1,
+              height: 40,
+              width: 'auto'
+            }}
+          />
           <Typography
             variant="h6"
             noWrap
@@ -156,6 +167,17 @@ const Navbar = () => {
           </Typography>
 
           {/* Mobile Logo */}
+          <Box 
+            component="img"
+            src={logo}
+            alt="CodeFR Logo"
+            sx={{ 
+              display: { xs: 'flex', md: 'none' },
+              mr: 1,
+              height: 32,
+              width: 'auto'
+            }}
+          />
           <Typography
             variant="h6"
             noWrap

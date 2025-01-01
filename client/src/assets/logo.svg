@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="500" height="500" viewBox="0 0 132.29166 132.29167" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <defs />
+  <g>
+    <path
+      style="fill:#1034a6;fill-opacity:1;stroke:none;stroke-width:7;stroke-dasharray:none;stroke-opacity:1"
+      d="m 27.166669,25.333335 c -0.7,0.82 -24.3453066,9.199739 -25.4054475,9.003522 C 0.70108057,34.140639 -18.37864,17.853073 -18.738781,16.836855 c -0.36014,-1.016218 4.205445,-25.6835236 4.905445,-26.5035237 0.7,-0.8200003 24.345307,-9.1997393 25.405448,-9.0035213 1.06014,0.196217 20.139861,16.4837834 20.500002,17.5000013 0.360141,1.01621785 -4.205445,25.6835237 -4.905445,26.5035237 z"
+      transform="matrix(1.5823641,1.842499,-1.854258,1.5723293,70.12176,41.545928)"
+    />
+    <ellipse
+      style="fill:none;fill-opacity:1;stroke:#ffffff;stroke-width:13.9376;stroke-dasharray:none;stroke-opacity:1"
+      cx="63.185589"
+      cy="65.312508"
+      rx="34.715687"
+      ry="39.282158"
+    />
+    <path
+      style="fill:#1034a6;fill-opacity:1;stroke:none;stroke-width:7;stroke-dasharray:none;stroke-opacity:1"
+      d="m 27.500001,21.500001 -49.598823,-9.697442 33.197643,-38.10512 z"
+      transform="matrix(1.3073529,0.41733081,-0.44817603,1.2169861,96.29697,60.876419)"
+    />
+    <text
+      style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:35.6782px;font-family:'Century Gothic';fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:7.07949"
+      x="84.00798"
+      y="79.662445"
+      transform="scale(1.012658,0.98750021)"
+    >
+      <tspan
+        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Century Gothic';fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:7.07949"
+        x="84.00798"
+        y="79.662445"
+      >Fr</tspan>
+    </text>
+  </g>
+</svg>

@@ -19,33 +19,42 @@ const Features = () => {
     {
       title: 'Éditeur de Code en Ligne',
       description: 'Écrivez et modifiez du code CodeFr avec coloration syntaxique et auto-complétion.',
-      icon: <CodeIcon fontSize="large" color="primary" />
+      icon: <CodeIcon fontSize="large" sx={{ color: 'primary.main' }} />
     },
     {
       title: 'Exécution Sécurisée',
       description: 'Exécutez votre code en toute sécurité dans des conteneurs Docker isolés.',
-      icon: <SecurityIcon fontSize="large" color="primary" />
+      icon: <SecurityIcon fontSize="large" sx={{ color: 'primary.main' }} />
     },
     {
       title: 'Défis de Programmation',
       description: 'Pratiquez avec des défis de codage et améliorez vos compétences.',
-      icon: <EmojiEventsIcon fontSize="large" color="primary" />
+      icon: <EmojiEventsIcon fontSize="large" sx={{ color: 'primary.main' }} />
     },
     {
       title: 'Fonctionnalités Communautaires',
       description: 'Partagez, aimez et commentez les extraits de code avec la communauté.',
-      icon: <GroupsIcon fontSize="large" color="primary" />
+      icon: <GroupsIcon fontSize="large" sx={{ color: 'primary.main' }} />
     }
   ];
 
   return (
-    <Box sx={{ py: 8, bgcolor: 'grey.100' }}>
+    <Box 
+      sx={{ 
+        py: 8, 
+        bgcolor: theme.palette.mode === 'dark' ? 'background.paper' : 'grey.100'
+      }}
+    >
       <Container maxWidth="lg">
         <Typography
           variant="h3"
           component="h2"
           align="center"
-          sx={{ mb: 6, fontWeight: 'bold', color: '#333' }}
+          sx={{ 
+            mb: 6, 
+            fontWeight: 'bold', 
+            color: 'text.primary'
+          }}
         >
           Fonctionnalités
         </Typography>
@@ -54,7 +63,7 @@ const Features = () => {
           {features.map((feature, index) => (
             <Grid item xs={12} sm={6} md={3} key={index}>
               <Paper
-                elevation={2}
+                elevation={theme.palette.mode === 'dark' ? 2 : 1}
                 sx={{
                   p: 3,
                   height: '100%',
@@ -62,26 +71,45 @@ const Features = () => {
                   flexDirection: 'column',
                   alignItems: 'center',
                   textAlign: 'center',
-                  transition: 'transform 0.2s',
+                  bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'background.paper',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
                   '&:hover': {
                     transform: 'translateY(-8px)',
                     boxShadow: theme.shadows[8]
-                  }
+                  },
+                  borderRadius: 2
                 }}
               >
-                <Box sx={{ mb: 2 }}>
+                <Box 
+                  sx={{ 
+                    mb: 2,
+                    p: 1.5,
+                    borderRadius: '50%',
+                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(144, 202, 249, 0.08)' : 'primary.lighter',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
                   {feature.icon}
                 </Box>
                 <Typography
                   variant="h6"
                   component="h3"
-                  sx={{ mb: 2, fontWeight: 'bold' }}
+                  sx={{ 
+                    mb: 2, 
+                    fontWeight: 'bold',
+                    color: 'text.primary'
+                  }}
                 >
                   {feature.title}
                 </Typography>
                 <Typography
                   variant="body1"
-                  color="text.secondary"
+                  sx={{ 
+                    color: 'text.secondary',
+                    lineHeight: 1.7
+                  }}
                 >
                   {feature.description}
                 </Typography>

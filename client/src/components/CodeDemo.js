@@ -4,10 +4,11 @@ import MonacoEditor from './CodeEditor/MonacoEditor';
 
 const CodeDemo = () => {
   const demoCode = `Algorithme CalculMoyenne
-Variables
-    notes: Tableau[3] de Decimal
-    moyenne: Decimal
-    i: Entier
+
+Tableau notes[3]: Decimal
+Variable moyenne: Decimal
+Variable i: Entier
+
 Debut
     // Saisie des notes
     Pour i De 0 A 2 Faire

@@ -7,67 +7,17 @@
    viewBox="0 0 132.29166 132.29167"
    version="1.1"
    id="svg1"
-   inkscape:version="1.3.2 (091e20e, 2023-11-25, custom)"
-   sodipodi:docname="CodeFr_logo.svg"
-   inkscape:export-filename="logo512.png"
-   inkscape:export-xdpi="36.863998"
-   inkscape:export-ydpi="36.863998"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
-  <sodipodi:namedview
-     id="namedview1"
-     pagecolor="#ffffff"
-     bordercolor="#000000"
-     borderopacity="0.25"
-     inkscape:showpageshadow="2"
-     inkscape:pageopacity="0.0"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     inkscape:document-units="mm"
-     inkscape:zoom="1.5875"
-     inkscape:cx="219.2126"
-     inkscape:cy="269.92126"
-     inkscape:window-width="1920"
-     inkscape:window-height="1129"
-     inkscape:window-x="-8"
-     inkscape:window-y="-8"
-     inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" />
   <defs
      id="defs1" />
   <g
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
      id="layer1">
     <path
-       sodipodi:type="star"
-       style="fill:#1034a6;stroke:none;stroke-width:7;stroke-dasharray:none;stroke-opacity:1;fill-opacity:1"
+       style="fill:#1034a6;fill-opacity:1;stroke:none;stroke-width:7;stroke-dasharray:none;stroke-opacity:1"
        id="path4"
-       inkscape:flatsided="true"
-       sodipodi:sides="6"
-       sodipodi:cx="6.6666665"
-       sodipodi:cy="7.833333"
-       sodipodi:r1="26.953667"
-       sodipodi:r2="24.901937"
-       sodipodi:arg1="0.7066142"
-       sodipodi:arg2="1.230213"
-       inkscape:rounded="0.04"
-       inkscape:randomized="0"
        d="m 27.166669,25.333335 c -0.7,0.82 -24.3453066,9.199739 -25.4054475,9.003522 C 0.70108057,34.140639 -18.37864,17.853073 -18.738781,16.836855 c -0.36014,-1.016218 4.205445,-25.6835236 4.905445,-26.5035237 0.7,-0.8200003 24.345307,-9.1997393 25.405448,-9.0035213 1.06014,0.196217 20.139861,16.4837834 20.500002,17.5000013 0.360141,1.01621785 -4.205445,25.6835237 -4.905445,26.5035237 z"
        transform="matrix(1.5823641,1.842499,-1.854258,1.5723293,70.12176,41.545928)" />
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:35.2777px;font-family:Roboto;-inkscape-font-specification:Roboto;fill:#0050dc;stroke:#ffffff;stroke-width:7;stroke-dasharray:none;stroke-opacity:1"
-       x="58.333332"
-       y="77"
-       id="text7"><tspan
-         sodipodi:role="line"
-         id="tspan7"
-         style="fill:#000000;stroke-width:7"
-         x="58.333332"
-         y="77" /></text>
     <ellipse
        style="fill:none;fill-opacity:1;stroke:#ffffff;stroke-width:13.9376;stroke-dasharray:none;stroke-opacity:1"
        id="path9"
@@ -76,22 +26,9 @@
        rx="34.715687"
        ry="39.282158" />
     <path
-       sodipodi:type="star"
        style="fill:#1034a6;fill-opacity:1;stroke:none;stroke-width:7;stroke-dasharray:none;stroke-opacity:1"
        id="path10"
-       inkscape:flatsided="true"
-       sodipodi:sides="3"
-       sodipodi:cx="5.5"
-       sodipodi:cy="2.3333333"
-       sodipodi:r1="29.178095"
-       sodipodi:r2="14.589046"
-       sodipodi:arg1="0.71668062"
-       sodipodi:arg2="1.7638782"
-       inkscape:rounded="0"
-       inkscape:randomized="0"
        d="m 27.500001,21.500001 -49.598823,-9.697442 33.197643,-38.10512 z"
-       inkscape:transform-center-x="10.076772"
-       inkscape:transform-center-y="-0.0030352034"
        transform="matrix(1.3073529,0.41733081,-0.44817603,1.2169861,96.29697,60.876419)" />
     <text
        xml:space="preserve"
@@ -100,7 +37,6 @@
        y="79.662445"
        id="text8"
        transform="scale(1.012658,0.98750021)"><tspan
-         sodipodi:role="line"
          id="tspan8"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Century Gothic';-inkscape-font-specification:'Century Gothic';fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:7.07949"
          x="84.00798"
