@@ -24,7 +24,12 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Tooltip
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Snackbar
 } from '@mui/material';
 import {
   Timer as TimerIcon,
@@ -72,6 +77,12 @@ const ChallengeDetailsPage = () => {
   const [submittingSolution, setSubmittingSolution] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setError] = useState('');
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'info'
+  });
 
   useEffect(() => {
     const fetchChallenge = async () => {
@@ -185,6 +196,25 @@ const ChallengeDetailsPage = () => {
     }
   };
 
+  const handleUpdateChallenge = async (updatedData) => {
+    try {
+      const { challenge: updatedChallenge } = await challengeService.updateChallenge(id, updatedData);
+      setChallenge(updatedChallenge);
+      setUpdateDialogOpen(false);
+      setSnackbar({
+        open: true,
+        message: 'Défi mis à jour avec succès',
+        severity: 'success'
+      });
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: error.message || 'Erreur lors de la mise à jour du défi',
+        severity: 'error'
+      });
+    }
+  };
+
   const renderSolutionStatus = (solution) => {
     if (!canManageChallenge()) {
       return (
@@ -288,11 +318,13 @@ const ChallengeDetailsPage = () => {
           <Typography variant="h4" component="h1" flex={1}>
             {challenge.title}
           </Typography>
-          {canManageChallenge() && (
+          {console.log(user)}
+          {user && user.role === 'admin' && (
             <Button
               startIcon={<EditIcon />}
               variant="outlined"
-              onClick={handleEditChallenge}
+              onClick={() => setUpdateDialogOpen(true)}
+              color="primary"
             >
               Modifier
             </Button>
@@ -351,7 +383,7 @@ const ChallengeDetailsPage = () => {
                     size="large"
                     onClick={handleStartChallenge}
                   >
-                    Commencer le défi
+                    Ouvrir l'editeur
                   </Button>
                 </Box>
               </Stack>
@@ -553,6 +585,72 @@ const ChallengeDetailsPage = () => {
           </Grid>
         </Grid>
       </Container>
+
+      {/* Update Challenge Dialog */}
+      <Dialog
+        open={updateDialogOpen}
+        onClose={() => setUpdateDialogOpen(false)}
+      >
+        <DialogTitle>Modifier le défi</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Titre"
+            value={challenge.title}
+            onChange={(e) => setChallenge({ ...challenge, title: e.target.value })}
+            fullWidth
+            margin="normal"
+          />
+          <TextField
+            label="Description"
+            value={challenge.description}
+            onChange={(e) => setChallenge({ ...challenge, description: e.target.value })}
+            fullWidth
+            margin="normal"
+            multiline
+            rows={4}
+          />
+          <TextField
+            label="Catégorie"
+            value={challenge.category}
+            onChange={(e) => setChallenge({ ...challenge, category: e.target.value })}
+            fullWidth
+            margin="normal"
+          />
+          <TextField
+            label="Difficulté"
+            value={challenge.difficulty}
+            onChange={(e) => setChallenge({ ...challenge, difficulty: e.target.value })}
+            fullWidth
+            margin="normal"
+          />
+          <TextField
+            label="Points"
+            value={challenge.points}
+            onChange={(e) => setChallenge({ ...challenge, points: e.target.value })}
+            fullWidth
+            margin="normal"
+            type="number"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUpdateDialogOpen(false)}>Annuler</Button>
+          <Button onClick={() => handleUpdateChallenge(challenge)}>Mettre à jour</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </AnimatedPage>
   );
 };

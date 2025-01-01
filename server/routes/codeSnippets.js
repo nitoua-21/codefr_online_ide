@@ -84,19 +84,16 @@ router.get('/public', async (req, res) => {
 // Get user's snippets
 router.get('/my', auth, async (req, res) => {
   try {
-    console.log('Getting snippets for user:', req.user._id);
     const snippets = await CodeSnippet.find({ author: req.user._id })
       .sort('-createdAt')
       .populate('author', 'username')
       .populate('challenge', 'title');
 
-    console.log('Found snippets:', snippets);
     res.json({
       success: true,
       snippets
     });
   } catch (error) {
-    console.error('Error getting user snippets:', error);
     res.status(400).json({
       success: false,
       error: error.message

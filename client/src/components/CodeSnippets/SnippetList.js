@@ -32,8 +32,6 @@ const SnippetCard = ({ snippet, onDelete }) => {
   const theme = useTheme();
   const { title, description, tags, isPublic, starCount, comments, createdAt, author } = snippet;
 
-  console.log(snippet);
-
   const handleEdit = () => {
     navigate(`/editor/${snippet._id}`);
   };

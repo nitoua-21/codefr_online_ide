@@ -4,22 +4,20 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
   Button,
-  FormControl,
-  InputLabel,
+  TextField,
+  Box,
   Select,
   MenuItem,
-  Box,
-  Stack,
+  FormControl,
+  InputLabel,
   Chip,
+  IconButton,
+  Stack,
   Typography,
   Alert
 } from '@mui/material';
-import MonacoEditor from '../CodeEditor/MonacoEditor';
-
-const difficultyLevels = ['Facile', 'Moyen', 'Difficile'];
-const categories = ['Algorithmes', 'Structures de données', 'Mathématiques', 'Logique', 'Autres'];
+import { Add as AddIcon, Close as CloseIcon } from '@mui/icons-material';
 
 const defaultFormData = {
   title: '',
@@ -34,17 +32,29 @@ const defaultFormData = {
   testCases: []
 };
 
-const ChallengeDialog = ({ open, onClose, onSubmit, challenge = null }) => {
+const ChallengeDialog = ({
+  open,
+  onClose,
+  onSubmit,
+  initialData,
+  mode = 'create'
+}) => {
   const [formData, setFormData] = useState(defaultFormData);
-  const [error, setError] = useState(null);
+  const [newTag, setNewTag] = useState('');
+  const [newHint, setNewHint] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (challenge) {
-      setFormData(challenge);
+    if (initialData && mode === 'update') {
+      setFormData({
+        ...defaultFormData,
+        ...initialData
+      });
     } else {
       setFormData(defaultFormData);
     }
-  }, [challenge, open]);
+  }, [initialData, mode, open]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -54,16 +64,10 @@ const ChallengeDialog = ({ open, onClose, onSubmit, challenge = null }) => {
     }));
   };
 
-  const handleCodeChange = (value, type) => {
-    setFormData(prev => ({
-      ...prev,
-      [type]: value
-    }));
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
+    setError('');
+    setLoading(true);
 
     try {
       // Basic validation
@@ -75,50 +79,79 @@ const ChallengeDialog = ({ open, onClose, onSubmit, challenge = null }) => {
       onClose();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleAddTag = () => {
+    if (newTag && !formData.tags.includes(newTag)) {
+      setFormData(prev => ({
+        ...prev,
+        tags: [...prev.tags, newTag]
+      }));
+      setNewTag('');
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      tags: prev.tags.filter(tag => tag !== tagToRemove)
+    }));
+  };
+
+  const handleAddHint = () => {
+    if (newHint) {
+      setFormData(prev => ({
+        ...prev,
+        hints: [...prev.hints, newHint]
+      }));
+      setNewHint('');
+    }
+  };
+
+  const handleRemoveHint = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      hints: prev.hints.filter((_, i) => i !== index)
+    }));
+  };
+
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose}
-      maxWidth="md"
-      fullWidth
-    >
-      <form onSubmit={handleSubmit}>
-        <DialogTitle>
-          {challenge ? 'Modifier le défi' : 'Nouveau défi'}
-        </DialogTitle>
-
-        <DialogContent>
-          <Stack spacing={3} sx={{ mt: 2 }}>
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {error}
-              </Alert>
-            )}
-
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <DialogTitle>
+        {mode === 'create' ? 'Créer un nouveau défi' : 'Modifier le défi'}
+      </DialogTitle>
+      <DialogContent>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+          <Stack spacing={3}>
             <TextField
-              fullWidth
               label="Titre"
               name="title"
               value={formData.title}
               onChange={handleChange}
               required
+              fullWidth
             />
 
             <TextField
-              fullWidth
               label="Description"
               name="description"
               value={formData.description}
               onChange={handleChange}
+              required
+              fullWidth
               multiline
               rows={4}
-              required
             />
 
-            <Box display="flex" gap={2}>
+            <Box sx={{ display: 'flex', gap: 2 }}>
               <FormControl fullWidth>
                 <InputLabel>Difficulté</InputLabel>
                 <Select
@@ -126,13 +159,10 @@ const ChallengeDialog = ({ open, onClose, onSubmit, challenge = null }) => {
                   value={formData.difficulty}
                   onChange={handleChange}
                   label="Difficulté"
-                  required
                 >
-                  {difficultyLevels.map(level => (
-                    <MenuItem key={level} value={level}>
-                      {level}
-                    </MenuItem>
-                  ))}
+                  <MenuItem value="Facile">Facile</MenuItem>
+                  <MenuItem value="Moyen">Moyen</MenuItem>
+                  <MenuItem value="Difficile">Difficile</MenuItem>
                 </Select>
               </FormControl>
 
@@ -143,18 +173,16 @@ const ChallengeDialog = ({ open, onClose, onSubmit, challenge = null }) => {
                   value={formData.category}
                   onChange={handleChange}
                   label="Catégorie"
-                  required
                 >
-                  {categories.map(category => (
-                    <MenuItem key={category} value={category}>
-                      {category}
-                    </MenuItem>
-                  ))}
+                  <MenuItem value="Algorithmes">Algorithmes</MenuItem>
+                  <MenuItem value="Structures de données">Structures de données</MenuItem>
+                  <MenuItem value="Mathématiques">Mathématiques</MenuItem>
+                  <MenuItem value="Logique">Logique</MenuItem>
                 </Select>
               </FormControl>
             </Box>
 
-            <Box display="flex" gap={2}>
+            <Box>
               <TextField
                 type="number"
                 label="Points"
@@ -164,48 +192,92 @@ const ChallengeDialog = ({ open, onClose, onSubmit, challenge = null }) => {
                 required
                 inputProps={{ min: 0 }}
               />
-
             </Box>
 
             <Box>
               <Typography variant="subtitle1" gutterBottom>
-                Code initial
+                Tags
               </Typography>
-              <MonacoEditor
-                height="200px"
-                language="codefr"
-                value={formData.initialCode}
-                onChange={(value) => handleCodeChange(value, 'initialCode')}
-              />
+              <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                {formData.tags.map((tag, index) => (
+                  <Chip
+                    key={index}
+                    label={tag}
+                    onDelete={() => handleRemoveTag(tag)}
+                  />
+                ))}
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <TextField
+                  label="Nouveau tag"
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.target.value)}
+                  size="small"
+                />
+                <IconButton onClick={handleAddTag} color="primary">
+                  <AddIcon />
+                </IconButton>
+              </Box>
             </Box>
 
             <Box>
               <Typography variant="subtitle1" gutterBottom>
-                Solution
+                Indices
               </Typography>
-              <MonacoEditor
-                height="200px"
-                language="codefr"
-                value={formData.solution}
-                onChange={(value) => handleCodeChange(value, 'solution')}
-              />
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 1 }}>
+                {formData.hints.map((hint, index) => (
+                  <Chip
+                    key={index}
+                    label={hint}
+                    onDelete={() => handleRemoveHint(index)}
+                    sx={{ maxWidth: '100%' }}
+                  />
+                ))}
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <TextField
+                  label="Nouvel indice"
+                  value={newHint}
+                  onChange={(e) => setNewHint(e.target.value)}
+                  size="small"
+                  fullWidth
+                />
+                <IconButton onClick={handleAddHint} color="primary">
+                  <AddIcon />
+                </IconButton>
+              </Box>
             </Box>
+
+            <TextField
+              label="Code initial"
+              name="initialCode"
+              value={formData.initialCode}
+              onChange={handleChange}
+              multiline
+              rows={4}
+            />
+
+            <TextField
+              label="Solution"
+              name="solution"
+              value={formData.solution}
+              onChange={handleChange}
+              multiline
+              rows={4}
+            />
           </Stack>
-        </DialogContent>
-
-        <DialogActions>
-          <Button onClick={onClose}>
-            Annuler
-          </Button>
-          <Button 
-            type="submit"
-            variant="contained"
-            color="primary"
-          >
-            {challenge ? 'Mettre à jour' : 'Créer'}
-          </Button>
-        </DialogActions>
-      </form>
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Annuler</Button>
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          disabled={loading}
+        >
+          {mode === 'create' ? 'Créer' : 'Mettre à jour'}
+        </Button>
+      </DialogActions>
     </Dialog>
   );
 };

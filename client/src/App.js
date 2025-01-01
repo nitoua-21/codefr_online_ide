@@ -20,6 +20,7 @@ import SettingsPage from './pages/SettingsPage';
 import ChallengeDetailsPage from './pages/ChallengeDetailsPage';
 import DashboardPage from './pages/DashboardPage';
 import DocsPage from './pages/DocsPage';
+import NotFoundPage from './pages/NotFoundPage';
 import Footer from './components/Footer';
 import AboutPage from './pages/AboutPage';
 import { Box } from '@mui/material';
@@ -196,6 +197,9 @@ const ThemedApp = () => {
                       <SettingsPage />
                     </ProtectedRoute>
                   } />
+
+                  {/* 404 Route - Must be last */}
+                  <Route path="*" element={<NotFoundPage />} />
                 </Routes>
               </AnimatePresence>
             </Box>

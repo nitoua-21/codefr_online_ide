@@ -11,10 +11,10 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  // Get theme from localStorage or default to 'light'
+  // Get theme from localStorage or default to 'dark'
   const [mode, setMode] = useState(() => {
     const savedMode = localStorage.getItem('theme-mode');
-    return savedMode || 'light';
+    return savedMode || 'dark';
   });
 
   // Update localStorage when theme changes
