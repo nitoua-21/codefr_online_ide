@@ -25,7 +25,7 @@ router.get('/', async (req, res) => {
     } = req.query;
 
     // Build query
-    const query = { isPublished: false };
+    const query = { isPublished: true };
     
     if (difficulty) query.difficulty = difficulty;
     if (category) query.category = category;

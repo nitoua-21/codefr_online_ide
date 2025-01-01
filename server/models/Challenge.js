@@ -38,7 +38,7 @@ const challengeSchema = new mongoose.Schema({
   },
   initialCode: {
     type: String,
-    required: true
+    required: false
   },
   testCases: [testCaseSchema],
   hints: [{
@@ -46,13 +46,7 @@ const challengeSchema = new mongoose.Schema({
   }],
   solution: {
     type: String,
-    required: true
-  },
-  timeLimit: {
-    type: Number,
-    required: true,
-    min: 1,
-    max: 60
+    required: false
   },
   points: {
     type: Number,
@@ -74,7 +68,7 @@ const challengeSchema = new mongoose.Schema({
   }],
   isPublished: {
     type: Boolean,
-    default: false
+    default: true
   },
   createdAt: {
     type: Date,
@@ -94,21 +88,7 @@ const challengeSchema = new mongoose.Schema({
 challengeSchema.virtual('successRate').get(function() {
   if (this.submissions === 0) return 0;
   return (this.successfulSubmissions / this.submissions * 100).toFixed(2);
-});
-
-// Virtual for time estimate based on difficulty
-challengeSchema.virtual('timeEstimate').get(function() {
-  switch(this.difficulty) {
-    case 'Facile':
-      return '15-30 min';
-    case 'Moyen':
-      return '30-60 min';
-    case 'Difficile':
-      return '60+ min';
-    default:
-      return 'N/A';
-  }
-});
+});;
 
 // Index for search
 challengeSchema.index({

@@ -29,8 +29,6 @@ const defaultFormData = {
   initialCode: '',
   solution: '',
   points: 100,
-  timeLimit: 300,
-  memoryLimit: 128,
   hints: [],
   tags: [],
   testCases: []
@@ -69,7 +67,7 @@ const ChallengeDialog = ({ open, onClose, onSubmit, challenge = null }) => {
 
     try {
       // Basic validation
-      if (!formData.title || !formData.description || !formData.initialCode || !formData.solution) {
+      if (!formData.title || !formData.description) {
         throw new Error('Veuillez remplir tous les champs obligatoires');
       }
 
@@ -167,25 +165,6 @@ const ChallengeDialog = ({ open, onClose, onSubmit, challenge = null }) => {
                 inputProps={{ min: 0 }}
               />
 
-              <TextField
-                type="number"
-                label="Temps limite (secondes)"
-                name="timeLimit"
-                value={formData.timeLimit}
-                onChange={handleChange}
-                required
-                inputProps={{ min: 60, max: 3600 }}
-              />
-
-              <TextField
-                type="number"
-                label="Mémoire limite (MB)"
-                name="memoryLimit"
-                value={formData.memoryLimit}
-                onChange={handleChange}
-                required
-                inputProps={{ min: 16, max: 512 }}
-              />
             </Box>
 
             <Box>
