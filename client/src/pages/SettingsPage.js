@@ -30,6 +30,7 @@ import AnimatedPage from '../components/AnimatedPage';
 import { motion } from 'framer-motion';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
+import userService from '../services/userService';
 
 const TabPanel = ({ children, value, index }) => (
   <div role="tabpanel" hidden={value !== index}>
@@ -38,13 +39,13 @@ const TabPanel = ({ children, value, index }) => (
 );
 
 const SettingsPage = () => {
-  const { user, login } = useAuth();
+  const { user, updateUserData } = useAuth();
   const { mode, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState(0);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [loading, setLoading] = useState(false);
   const [profileData, setProfileData] = useState({
-    name: user?.name || '',
+    username: user?.username || '',
     email: user?.email || '',
     bio: user?.bio || '',
     location: user?.location || '',
@@ -53,11 +54,11 @@ const SettingsPage = () => {
   });
 
   const [preferences, setPreferences] = useState({
-    emailNotifications: true,
-    challengeNotifications: true,
-    autoComplete: true,
-    lineNumbers: true,
-    minimap: true,
+    emailNotifications: user?.preferences?.emailNotifications ?? true,
+    challengeNotifications: user?.preferences?.challengeNotifications ?? true,
+    autoComplete: user?.preferences?.autoComplete ?? true,
+    lineNumbers: user?.preferences?.lineNumbers ?? true,
+    minimap: user?.preferences?.minimap ?? true,
   });
 
   const [security, setSecurity] = useState({
@@ -95,40 +96,61 @@ const SettingsPage = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      // Here you would typically make an API call to update the profile
-      const updatedUser = {
-        ...user,
-        ...profileData,
-      };
-      login(updatedUser); // Update local state
+      const { user: updatedUser } = await userService.updateProfile(profileData);
+      updateUserData(updatedUser);
       setMessage({
         type: 'success',
-        text: 'Profil mis à jour avec succès',
+        text: 'Profile updated successfully',
       });
     } catch (error) {
       setMessage({
         type: 'error',
-        text: "Une erreur s'est produite lors de la mise à jour du profil",
+        text: error.message || 'Error updating profile',
       });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  const handlePasswordChange = async (e) => {
+  const handlePreferencesSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { user: updatedUser } = await userService.updatePreferences(preferences);
+      updateUserData(updatedUser);
+      setMessage({
+        type: 'success',
+        text: 'Preferences updated successfully',
+      });
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error.message || 'Error updating preferences',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     if (security.newPassword !== security.confirmPassword) {
       setMessage({
         type: 'error',
-        text: 'Les mots de passe ne correspondent pas',
+        text: 'New passwords do not match',
       });
       return;
     }
+
     setLoading(true);
     try {
-      // Here you would typically make an API call to change the password
+      await userService.updatePassword({
+        currentPassword: security.currentPassword,
+        newPassword: security.newPassword,
+      });
       setMessage({
         type: 'success',
-        text: 'Mot de passe mis à jour avec succès',
+        text: 'Password updated successfully',
       });
       setSecurity({
         currentPassword: '',
@@ -138,28 +160,11 @@ const SettingsPage = () => {
     } catch (error) {
       setMessage({
         type: 'error',
-        text: "Une erreur s'est produite lors du changement de mot de passe",
+        text: error.message || 'Error updating password',
       });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  };
-
-  const handlePreferencesSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      // Here you would typically make an API call to save preferences
-      setMessage({
-        type: 'success',
-        text: 'Préférences enregistrées avec succès',
-      });
-    } catch (error) {
-      setMessage({
-        type: 'error',
-        text: "Une erreur s'est produite lors de l'enregistrement des préférences",
-      });
-    }
-    setLoading(false);
   };
 
   return (
@@ -230,9 +235,9 @@ const SettingsPage = () => {
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="Nom"
-                    name="name"
-                    value={profileData.name}
+                    label="Pseudo"
+                    name="username"
+                    value={profileData.username}
                     onChange={handleProfileChange}
                   />
                 </Grid>
@@ -376,7 +381,7 @@ const SettingsPage = () => {
           </TabPanel>
 
           <TabPanel value={activeTab} index={2}>
-            <Box component="form" onSubmit={handlePasswordChange}>
+            <Box component="form" onSubmit={handlePasswordSubmit}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
                   <TextField

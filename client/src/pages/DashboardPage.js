@@ -35,6 +35,7 @@ import {
   Add as AddIcon,
   Public as PublicIcon,
   History as HistoryIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import AnimatedPage from '../components/AnimatedPage';
 import SnippetList from '../components/CodeSnippets/SnippetList';
@@ -144,21 +145,31 @@ const DashboardPage = () => {
 
         {/* User Welcome Section */}
         <Paper sx={{ p: 3, mb: 3 }}>
-          <Box display="flex" alignItems="center">
-            <Avatar
-              sx={{ width: 56, height: 56, mr: 2 }}
-              src={user?.profilePicture}
-            >
-              {user?.username?.[0]?.toUpperCase()}
-            </Avatar>
-            <Box>
-              <Typography variant="h5" gutterBottom>
-                Bienvenue, {user?.username}
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                {stats?.rank || 'Débutant'} - Top {stats?.rankPercentile || 0}%
-              </Typography>
+          <Box display="flex" alignItems="center" justifyContent="space-between">
+            <Box display="flex" alignItems="center">
+              <Avatar
+                sx={{ width: 56, height: 56, mr: 2 }}
+                src={user?.profilePicture}
+              >
+                {user?.username?.[0]?.toUpperCase()}
+              </Avatar>
+              <Box>
+                <Typography variant="h5" gutterBottom>
+                  Bienvenue, {user?.username}
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                  {stats?.rank || 'Débutant'} - Top {stats?.rankPercentile || 0}%
+                </Typography>
+              </Box>
             </Box>
+            <Button
+              variant="outlined"
+              startIcon={<SettingsIcon />}
+              onClick={() => navigate('/settings')}
+              sx={{ ml: 2 }}
+            >
+              Settings
+            </Button>
           </Box>
         </Paper>
 
