@@ -8,7 +8,7 @@ router.post('/execute', async (req, res) => {
 
     // Validate request
     if (!code) {
-      return res.status(400).json({ error: 'Code is required' });
+      return res.status(400).json({ error: 'Le code est requis' });
     }
 
     // Validate code structure
@@ -21,7 +21,7 @@ router.post('/execute', async (req, res) => {
   } catch (error) {
     console.error('Error executing code:', error);
     res.status(500).json({
-      error: error.message || 'Error executing code'
+      error: error.message || 'Erreur lors de l\'exécution du code'
     });
   }
 });

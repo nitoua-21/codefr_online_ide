@@ -318,7 +318,6 @@ const ChallengeDetailsPage = () => {
           <Typography variant="h4" component="h1" flex={1}>
             {challenge.title}
           </Typography>
-          {console.log(user)}
           {user && user.role === 'admin' && (
             <Button
               startIcon={<EditIcon />}

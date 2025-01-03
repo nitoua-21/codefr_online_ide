@@ -84,8 +84,9 @@ const EditorPage = () => {
           });
           setIsStarred(snippet.stars.includes(user?._id));
           setSnippetAuthor(snippet.author);
-          setCanEdit(user?.username !== snippet.author?.username);
-          setCanSave(user?.username !== snippet.author?.username);
+          const check = user?.username === snippet.author?.username;
+          setCanEdit(check);
+          setCanSave(check);
         } catch (err) {
           setError('Erreur lors du chargement du snippet');
           console.error('Load snippet error:', err);
@@ -285,7 +286,6 @@ const EditorPage = () => {
                   >
                     Exécuter
                   </Button>
-                  {console.log('canSave:', canSave)}
                   <Button
                     variant="outlined"
                     startIcon={<SaveIcon />}
@@ -423,7 +423,7 @@ const EditorPage = () => {
 
           {/* Snackbars */}
           <Snackbar
-            open={!!successMessage}
+            open={successMessage.length > 0}
             autoHideDuration={3000}
             onClose={() => setSuccessMessage('')}
           >

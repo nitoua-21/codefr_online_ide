@@ -14,7 +14,7 @@ router.get('/', auth, async (req, res) => {
     res.json({ success: true, user });
   } catch (error) {
     console.error('Get user error:', error);
-    res.status(500).json({ success: false, message: 'Error fetching user data' });
+    res.status(500).json({ success: false, message: 'Erreur lors de la récupération des données utilisateur' });
   }
 });
 
@@ -28,7 +28,7 @@ router.post('/register', async (req, res) => {
     if (user) {
       return res.status(400).json({
         success: false,
-        message: user.email === email ? 'Email already exists' : 'Username already exists'
+        message: user.email === email ? 'Cet email est déjà utilisé' : 'Ce nom d\'utilisateur est déjà pris'
       });
     }
 
@@ -62,7 +62,7 @@ router.post('/register', async (req, res) => {
     console.error('Registration error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error creating user'
+      message: 'Erreur lors de la création de l\'utilisateur'
     });
   }
 });
@@ -77,7 +77,7 @@ router.post('/login', async (req, res) => {
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'Email ou mot de passe incorrect'
       });
     }
 
@@ -86,7 +86,7 @@ router.post('/login', async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'Email ou mot de passe incorrect'
       });
     }
 
@@ -115,7 +115,7 @@ router.post('/login', async (req, res) => {
     console.error('Login error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error logging in'
+      message: 'Erreur lors de la connexion'
     });
   }
 });
@@ -123,7 +123,7 @@ router.post('/login', async (req, res) => {
 // Update user profile
 router.put('/profile', auth, async (req, res) => {
   try {
-    const { username, email, bio, location, github, website } = req.body;
+    const { username, email, bio, location, github, website, role } = req.body;
     const userId = req.user.id;
 
     // Check if email or username is already taken by another user
@@ -138,7 +138,7 @@ router.put('/profile', auth, async (req, res) => {
       if (existingUser) {
         return res.status(400).json({
           success: false,
-          message: existingUser.email === email ? 'Email already in use' : 'Username already taken'
+          message: existingUser.email === email ? 'Cet email est déjà utilisé' : 'Ce nom d\'utilisateur est déjà pris'
         });
       }
     }
@@ -152,6 +152,7 @@ router.put('/profile', auth, async (req, res) => {
         location,
         github,
         website,
+        role
       },
       { new: true, select: '-password' }
     );
@@ -164,7 +165,7 @@ router.put('/profile', auth, async (req, res) => {
     console.error('Profile update error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error updating profile'
+      message: 'Erreur lors de la mise à jour du profil'
     });
   }
 });
@@ -179,7 +180,7 @@ router.put('/password', auth, async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'Utilisateur non trouvé'
       });
     }
 
@@ -188,7 +189,7 @@ router.put('/password', auth, async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({
         success: false,
-        message: 'Current password is incorrect'
+        message: 'Mot de passe actuel incorrect'
       });
     }
 
@@ -202,13 +203,13 @@ router.put('/password', auth, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Password updated successfully'
+      message: 'Mot de passe mis à jour avec succès'
     });
   } catch (error) {
     console.error('Password update error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error updating password'
+      message: 'Erreur lors du changement de mot de passe'
     });
   }
 });
@@ -233,7 +234,7 @@ router.put('/preferences', auth, async (req, res) => {
     console.error('Preferences update error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error updating preferences'
+      message: 'Erreur lors de la mise à jour des préférences'
     });
   }
 });
@@ -243,13 +244,13 @@ router.post('/logout', auth, (req, res) => {
   try {
     res.json({
       success: true,
-      message: 'Logged out successfully'
+      message: 'Déconnecté avec succès'
     });
   } catch (error) {
     console.error('Logout error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error logging out'
+      message: 'Erreur lors de la déconnexion'
     });
   }
 });
@@ -261,7 +262,7 @@ router.get('/count', async (req, res) => {
     res.json({ count });
   } catch (error) {
     console.error('Error getting user count:', error);
-    res.status(500).json({ error: 'Error getting user count' });
+    res.status(500).json({ error: 'Erreur lors de la récupération du nombre d\'utilisateurs' });
   }
 });
 
@@ -277,7 +278,7 @@ router.get('/me', auth, async (req, res) => {
     console.error('Get user error:', error);
     res.status(500).json({
       success: false,
-      error: 'Error getting user data'
+      error: 'Erreur lors de la récupération des données utilisateur'
     });
   }
 });

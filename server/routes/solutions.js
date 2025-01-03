@@ -15,7 +15,7 @@ router.get('/:id', auth, async (req, res) => {
     if (!solution) {
       return res.status(404).json({
         success: false,
-        error: 'Solution not found'
+        error: 'Solution non trouvée'
       });
     }
 
@@ -24,7 +24,7 @@ router.get('/:id', auth, async (req, res) => {
     if (!solution.user._id.equals(req.user._id) && !challenge.author.equals(req.user._id)) {
       return res.status(403).json({
         success: false,
-        error: 'Not authorized to view this solution'
+        error: 'Non autorisé à voir cette solution'
       });
     }
 
@@ -35,7 +35,7 @@ router.get('/:id', auth, async (req, res) => {
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error.message
+      error: 'Erreur lors de la récupération de la solution'
     });
   }
 });
@@ -48,7 +48,7 @@ router.get('/challenge/:challengeId', auth, async (req, res) => {
     if (!challenge) {
       return res.status(404).json({
         success: false,
-        error: 'Challenge not found'
+        error: 'Défi non trouvé'
       });
     }
 
@@ -56,7 +56,7 @@ router.get('/challenge/:challengeId', auth, async (req, res) => {
     if (!challenge.author.equals(req.user._id)) {
       return res.status(403).json({
         success: false,
-        error: 'Not authorized to view all solutions'
+        error: 'Non autorisé à voir les solutions'
       });
     }
 
@@ -71,7 +71,7 @@ router.get('/challenge/:challengeId', auth, async (req, res) => {
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error.message
+      error: 'Erreur lors de la récupération des solutions'
     });
   }
 });
@@ -91,7 +91,7 @@ router.get('/challenge/:challengeId/my', auth, async (req, res) => {
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error.message
+      error: 'Erreur lors de la récupération des solutions'
     });
   }
 });
@@ -104,7 +104,7 @@ router.post('/challenge/:challengeId', auth, async (req, res) => {
     if (!challenge) {
       return res.status(404).json({
         success: false,
-        error: 'Challenge not found'
+        error: 'Défi non trouvé'
       });
     }
 
@@ -124,7 +124,6 @@ router.post('/challenge/:challengeId', auth, async (req, res) => {
 
     await solution.save();
 
-    
     // Execute test cases
     /*const testResults = [];
     let passedTests = 0;
@@ -192,7 +191,7 @@ router.post('/challenge/:challengeId', auth, async (req, res) => {
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error.message
+      error: 'Erreur lors de la soumission de la solution'
     });
   }
 });
@@ -205,7 +204,7 @@ router.put('/:id/status', auth, async (req, res) => {
     if (!['pending', 'approved', 'rejected'].includes(status)) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid status value'
+        error: 'Statut invalide'
       });
     }
 
@@ -213,7 +212,7 @@ router.put('/:id/status', auth, async (req, res) => {
     if (!solution) {
       return res.status(404).json({
         success: false,
-        error: 'Solution not found'
+        error: 'Solution non trouvée'
       });
     }
 
@@ -222,7 +221,7 @@ router.put('/:id/status', auth, async (req, res) => {
     if (!challenge.author.equals(req.user._id)) {
       return res.status(403).json({
         success: false,
-        error: 'Not authorized to update solution status'
+        error: 'Non autorisé à mettre à jour le statut de la solution'
       });
     }
 
@@ -237,7 +236,7 @@ router.put('/:id/status', auth, async (req, res) => {
     console.error('Update solution status error:', error);
     res.status(400).json({
       success: false,
-      error: error.message
+      error: 'Erreur lors de la mise à jour du statut de la solution'
     });
   }
 });

@@ -44,7 +44,8 @@ const LoginPage = () => {
       await login(formData);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message || 'Email ou mot de passe incorrect');
+      console.error('Login error:', err);
+      setError(err || 'Email ou mot de passe incorrect');
     } finally {
       setLoading(false);
     }

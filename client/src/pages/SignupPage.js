@@ -65,7 +65,7 @@ const SignupPage = () => {
       await register(registerData);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message || "Une erreur s'est produite lors de l'inscription");
+      setError(err || "Une erreur s'est produite lors de l'inscription");
     } finally {
       setLoading(false);
     }

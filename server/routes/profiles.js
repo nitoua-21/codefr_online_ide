@@ -24,7 +24,7 @@ router.get('/me', auth, async (req, res) => {
     console.error('Get profile error:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: 'Erreur lors de la récupération du profil'
     });
   }
 });
@@ -38,7 +38,7 @@ router.get('/user/:userId', async (req, res) => {
     if (!profile) {
       return res.status(404).json({
         success: false,
-        error: 'Profile not found'
+        error: 'Profil non trouvé'
       });
     }
 
@@ -50,7 +50,7 @@ router.get('/user/:userId', async (req, res) => {
     console.error('Get profile error:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: 'Erreur lors de la récupération du profil'
     });
   }
 });
@@ -94,7 +94,7 @@ router.put('/me', auth, async (req, res) => {
     console.error('Update profile error:', error);
     res.status(400).json({
       success: false,
-      error: error.message
+      error: 'Erreur lors de la mise à jour du profil'
     });
   }
 });
@@ -107,7 +107,7 @@ router.put('/me/avatar', auth, async (req, res) => {
     if (!avatar) {
       return res.status(400).json({
         success: false,
-        error: 'Avatar URL is required'
+        error: 'L\'URL de l\'avatar est requise'
       });
     }
 
@@ -128,7 +128,7 @@ router.put('/me/avatar', auth, async (req, res) => {
     console.error('Update avatar error:', error);
     res.status(400).json({
       success: false,
-      error: error.message
+      error: 'Erreur lors de la mise à jour de l\'avatar'
     });
   }
 });
@@ -173,7 +173,7 @@ router.post('/me/experience', auth, async (req, res) => {
     console.error('Add experience error:', error);
     res.status(400).json({
       success: false,
-      error: error.message
+      error: 'Erreur lors de l\'ajout de l\'expérience'
     });
   }
 });
@@ -186,7 +186,7 @@ router.delete('/me/experience/:exp_id', auth, async (req, res) => {
     if (!profile) {
       return res.status(404).json({
         success: false,
-        error: 'Profile not found'
+        error: 'Profil non trouvé'
       });
     }
 
@@ -204,7 +204,7 @@ router.delete('/me/experience/:exp_id', auth, async (req, res) => {
     console.error('Delete experience error:', error);
     res.status(400).json({
       success: false,
-      error: error.message
+      error: 'Erreur lors de la suppression de l\'expérience'
     });
   }
 });
@@ -249,7 +249,7 @@ router.post('/me/education', auth, async (req, res) => {
     console.error('Add education error:', error);
     res.status(400).json({
       success: false,
-      error: error.message
+      error: 'Erreur lors de l\'ajout de la formation'
     });
   }
 });
@@ -262,7 +262,7 @@ router.delete('/me/education/:edu_id', auth, async (req, res) => {
     if (!profile) {
       return res.status(404).json({
         success: false,
-        error: 'Profile not found'
+        error: 'Profil non trouvé'
       });
     }
 
@@ -280,7 +280,7 @@ router.delete('/me/education/:edu_id', auth, async (req, res) => {
     console.error('Delete education error:', error);
     res.status(400).json({
       success: false,
-      error: error.message
+      error: 'Erreur lors de la suppression de la formation'
     });
   }
 });

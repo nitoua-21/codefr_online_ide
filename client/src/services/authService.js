@@ -12,7 +12,7 @@ const authService = {
       }
       return response.data;
     } catch (error) {
-      throw error.response?.data?.error || 'Error during registration';
+      throw error.response?.data?.message || 'Error during registration';
     }
   },
 
@@ -24,7 +24,7 @@ const authService = {
       }
       return response.data;
     } catch (error) {
-      throw error.response?.data?.error || 'Error during login';
+      throw error.response?.data?.message || 'Error during login';
     }
   },
 
@@ -32,7 +32,6 @@ const authService = {
     try {
       await api.post('/users/logout');
     } catch (error) {
-      console.error('Logout error:', error);
     } finally {
       localStorage.removeItem(TOKEN_KEY);
       return true;
@@ -51,7 +50,7 @@ const authService = {
       if (error.response?.status === 401) {
         localStorage.removeItem(TOKEN_KEY);
       }
-      throw error.response?.data?.error || 'Error getting current user';
+      throw error.response?.data?.message || 'Error getting current user';
     }
   },
 
@@ -78,7 +77,7 @@ const authService = {
       const response = await api.post('/users/forgot-password', { email });
       return response.data;
     } catch (error) {
-      throw error.response?.data?.error || 'Error requesting password reset';
+      throw error.response?.data?.message || 'Error requesting password reset';
     }
   },
 
@@ -87,7 +86,7 @@ const authService = {
       const response = await api.post(`/users/reset-password/${token}`, { password });
       return response.data;
     } catch (error) {
-      throw error.response?.data?.error || 'Error resetting password';
+      throw error.response?.data?.message || 'Error resetting password';
     }
   }
 };

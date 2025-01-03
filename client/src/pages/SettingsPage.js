@@ -18,6 +18,7 @@ import {
   Tabs,
   Tab,
   Badge,
+  unstable_createMuiStrictModeTheme,
 } from '@mui/material';
 import {
   PhotoCamera,
@@ -51,6 +52,7 @@ const SettingsPage = () => {
     location: user?.location || '',
     github: user?.github || '',
     website: user?.website || '',
+    role: user?.role || 'standard',
   });
 
   const [preferences, setPreferences] = useState({

