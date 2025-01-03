@@ -67,6 +67,8 @@ const EditorPage = () => {
   const [validationError, setValidationError] = useState('');
   const [showComments, setShowComments] = useState(false);
   const [snippetAuthor, setSnippetAuthor] = useState(null);
+  const [canEdit, setCanEdit] = useState(true);
+  const [canSave, setCanSave] = useState(false);
 
   useEffect(() => {
     const loadSnippet = async () => {
@@ -82,6 +84,8 @@ const EditorPage = () => {
           });
           setIsStarred(snippet.stars.includes(user?._id));
           setSnippetAuthor(snippet.author);
+          setCanEdit(user?.username !== snippet.author?.username);
+          setCanSave(isAuthenticated ||(user?.username !== snippetAuthor?.username));
         } catch (err) {
           setError('Erreur lors du chargement du snippet');
           console.error('Load snippet error:', err);
@@ -282,7 +286,7 @@ const EditorPage = () => {
                     variant="outlined"
                     startIcon={<SaveIcon />}
                     onClick={handleSaveCode}
-                    disabled={(isAuthenticated && Boolean(snippetId)) || !isAuthenticated || (Boolean(snippetId) && user?.username !== snippetAuthor?.username)}
+                    disabled={!canEdit}
                   >
                     Sauvegarder
                   </Button>
@@ -337,7 +341,7 @@ const EditorPage = () => {
                 <MonacoEditor
                   value={code}
                   onChange={setCode}
-                  readOnly={Boolean(snippetId) && (user?.username !== snippetAuthor?.username)}
+                  readOnly={!canEdit}
                 />
               </Box>
 
@@ -353,7 +357,7 @@ const EditorPage = () => {
                     overflow: 'auto',
                     fontFamily: 'monospace',
                     position: 'relative',
-                    bgcolor: error ? 'error.light' : 'background.default',
+                    bgcolor:'background.default',
                   }}
                 >
                   {isExecuting ? (

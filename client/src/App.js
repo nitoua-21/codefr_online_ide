@@ -21,6 +21,8 @@ import ChallengeDetailsPage from './pages/ChallengeDetailsPage';
 import DashboardPage from './pages/DashboardPage';
 import DocsPage from './pages/DocsPage';
 import NotFoundPage from './pages/NotFoundPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import Footer from './components/Footer';
 import AboutPage from './pages/AboutPage';
 import { Box } from '@mui/material';
@@ -158,6 +160,8 @@ const ThemedApp = () => {
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/signup" element={<SignupPage />} />
+                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
                   <Route path="/editor" element={<EditorPage />} />
                   <Route path="/editor/:id" element={<EditorPage />} />
 
@@ -182,9 +186,9 @@ const ThemedApp = () => {
                       <DocsPage />
                     </ProtectedRoute>
                   } />
-                  <Route path="/dashboard" element={
+                  <Route path="/learn" element={
                     <ProtectedRoute>
-                      <DashboardPage />
+                      <LearnPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/profile" element={
@@ -195,6 +199,11 @@ const ThemedApp = () => {
                   <Route path="/settings" element={
                     <ProtectedRoute>
                       <SettingsPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/dashboard" element={
+                    <ProtectedRoute>
+                      <DashboardPage />
                     </ProtectedRoute>
                   } />
 

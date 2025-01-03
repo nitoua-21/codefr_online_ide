@@ -2,10 +2,12 @@ FROM node:18
 
 WORKDIR /app
 
+# Copy package files first for better caching
 COPY client/package*.json ./
 RUN npm install
 
-COPY client ./
+# Copy the rest of the client code
+COPY client/ ./
 
 EXPOSE 3000
 

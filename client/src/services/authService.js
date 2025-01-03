@@ -1,13 +1,14 @@
 import api from './api';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const TOKEN_KEY = 'token';
 
 const authService = {
   register: async (userData) => {
     try {
       const response = await api.post('/users/register', userData);
       if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+        localStorage.setItem(TOKEN_KEY, response.data.token);
       }
       return response.data;
     } catch (error) {
@@ -19,7 +20,7 @@ const authService = {
     try {
       const response = await api.post('/users/login', credentials);
       if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+        localStorage.setItem(TOKEN_KEY, response.data.token);
       }
       return response.data;
     } catch (error) {
@@ -33,14 +34,14 @@ const authService = {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      localStorage.removeItem('token');
+      localStorage.removeItem(TOKEN_KEY);
       return true;
     }
   },
 
   getCurrentUser: async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem(TOKEN_KEY);
       if (!token) {
         throw new Error('No token found');
       }
@@ -48,7 +49,7 @@ const authService = {
       return response.data;
     } catch (error) {
       if (error.response?.status === 401) {
-        localStorage.removeItem('token');
+        localStorage.removeItem(TOKEN_KEY);
       }
       throw error.response?.data?.error || 'Error getting current user';
     }
@@ -69,7 +70,25 @@ const authService = {
 
   // Check if user is authenticated
   isAuthenticated: () => {
-    return !!localStorage.getItem('token');
+    return !!localStorage.getItem(TOKEN_KEY);
+  },
+
+  forgotPassword: async (email) => {
+    try {
+      const response = await api.post('/users/forgot-password', { email });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.error || 'Error requesting password reset';
+    }
+  },
+
+  resetPassword: async (token, password) => {
+    try {
+      const response = await api.post(`/users/reset-password/${token}`, { password });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.error || 'Error resetting password';
+    }
   }
 };
 

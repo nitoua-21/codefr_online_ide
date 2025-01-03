@@ -95,6 +95,7 @@ const LoginPage = () => {
                 autoFocus
                 value={formData.email}
                 onChange={handleChange}
+                sx={{ mb: 3 }}
               />
               <TextField
                 margin="normal"
@@ -107,6 +108,7 @@ const LoginPage = () => {
                 autoComplete="current-password"
                 value={formData.password}
                 onChange={handleChange}
+                sx={{ mb: 2 }}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -121,6 +123,13 @@ const LoginPage = () => {
                   ),
                 }}
               />
+
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                <Link component={RouterLink} to="/forgot-password" sx={{ color: 'primary.main', textDecoration: 'none', fontSize: '0.9rem' }}>
+                  Mot de passe oublié ?
+                </Link>
+              </Box>
+
               <Button
                 type="submit"
                 fullWidth

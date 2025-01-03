@@ -168,7 +168,7 @@ const DashboardPage = () => {
               onClick={() => navigate('/settings')}
               sx={{ ml: 2 }}
             >
-              Settings
+              Profil
             </Button>
           </Box>
         </Paper>
