@@ -85,7 +85,7 @@ const EditorPage = () => {
           setIsStarred(snippet.stars.includes(user?._id));
           setSnippetAuthor(snippet.author);
           setCanEdit(user?.username !== snippet.author?.username);
-          setCanSave(isAuthenticated ||(user?.username !== snippetAuthor?.username));
+          setCanSave(user?.username !== snippet.author?.username);
         } catch (err) {
           setError('Erreur lors du chargement du snippet');
           console.error('Load snippet error:', err);
@@ -95,6 +95,10 @@ const EditorPage = () => {
 
     if (snippetId) {
       loadSnippet();
+    } else {
+      console.log('No snippet ID provided');
+      setCanEdit(isAuthenticated ? true : false);
+      setCanSave(isAuthenticated ? true : false);
     }
   }, [snippetId, user?._id]);
 
@@ -281,12 +285,12 @@ const EditorPage = () => {
                   >
                     Exécuter
                   </Button>
-
+                  {console.log('canSave:', canSave)}
                   <Button
                     variant="outlined"
                     startIcon={<SaveIcon />}
                     onClick={handleSaveCode}
-                    disabled={!canEdit}
+                    disabled={!canSave}
                   >
                     Sauvegarder
                   </Button>
@@ -357,7 +361,7 @@ const EditorPage = () => {
                     overflow: 'auto',
                     fontFamily: 'monospace',
                     position: 'relative',
-                    bgcolor:'background.default',
+                    bgcolor: 'background.default',
                   }}
                 >
                   {isExecuting ? (

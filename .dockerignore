@@ -49,8 +49,8 @@ Dockerfile*
 docker-compose*.yml
 
 # Client-specific (when building backend)
-client/
-public/
+#client/
+#public/
 
 # Server-specific (when building frontend)
 server/temp/

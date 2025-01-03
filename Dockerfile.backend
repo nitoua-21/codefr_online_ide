@@ -19,7 +19,6 @@ COPY scripts/setup-interpreter.sh ./scripts/
 RUN chmod +x ./scripts/setup-interpreter.sh
 
 # Install interpreter (as root)
-USER root
 RUN ./scripts/setup-interpreter.sh
 
 # Copy app source

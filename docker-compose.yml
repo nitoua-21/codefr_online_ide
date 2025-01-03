@@ -19,6 +19,11 @@ services:
     environment:
       - MONGODB_URI=mongodb://mongodb:27017/codefr-ide
       - PORT=5000
+      - JWT_SECRET=2959d2068044e3ea65203a284cd0887cf5551944ff6e42995777a78f85c54938
+    volumes:
+      - ./server:/app/server
+      - /app/node_modules
+    command: npm run dev
 
   frontend:
     build:
@@ -28,6 +33,13 @@ services:
       - "3000:3000"
     depends_on:
       - backend
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000/api
+      - JWT_SECRET=2959d2068044e3ea65203a284cd0887cf5551944ff6e42995777a78f85c54938
+    command: npm start
 
 volumes:
   mongodb_data:
