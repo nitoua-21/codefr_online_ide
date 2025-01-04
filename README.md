@@ -56,21 +56,71 @@ codefr-online-ide/
 
 ## API Documentation
 
-### User Routes
-- `GET /api/users` - Get user information
-- `POST /api/users` - Register new user
+### Authentication
+- `POST /api/users/register` - Register a new user
+  - Body: `{ username, email, password }`
+  - Returns: User object and JWT token
 
-### Code Snippet Routes
+- `POST /api/users/login` - Login user
+  - Body: `{ email, password }`
+  - Returns: User object and JWT token
+
+- `POST /api/users/forgot-password` - Request password reset
+  - Body: `{ email }`
+  - Returns: Success message
+
+- `POST /api/users/reset-password/:token` - Reset password using token
+  - Body: `{ password }`
+  - Returns: Success message
+
+### User Management
+- `GET /api/users` - Get authenticated user information
+  - Headers: `Authorization: Bearer [token]`
+  - Returns: User object
+
+- `PUT /api/users/password` - Change user password
+  - Headers: `Authorization: Bearer [token]`
+  - Body: `{ currentPassword, newPassword }`
+  - Returns: Success message
+
+### Profile Routes
+- `GET /api/profiles` - Get user profiles
+- `GET /api/profiles/:id` - Get specific profile
+- `PUT /api/profiles/:id` - Update profile
+
+### Dashboard Routes
+- `GET /api/dashboard` - Get dashboard data
+- `GET /api/dashboard/stats` - Get user statistics
+
+### Code Snippets
 - `GET /api/code-snippets` - Get all snippets
 - `POST /api/code-snippets` - Create new snippet
 - `GET /api/code-snippets/:id` - Get snippet by ID
 - `PUT /api/code-snippets/:id` - Update snippet
 - `DELETE /api/code-snippets/:id` - Delete snippet
 
-### Challenge Routes
+### Challenges
 - `GET /api/challenges` - Get all challenges
 - `GET /api/challenges/:id` - Get challenge details
-- `POST /api/challenges/:id/solutions` - Submit solution
+- `POST /api/challenges` - Create new challenge
+- `PUT /api/challenges/:id` - Update challenge
+- `DELETE /api/challenges/:id` - Delete challenge
+
+### Solutions
+- `POST /api/solutions` - Submit solution
+- `GET /api/solutions/:id` - Get solution details
+- `GET /api/solutions/challenge/:challengeId` - Get solutions for challenge
+
+### Code Execution
+- `POST /api/execution` - Execute code
+  - Body: `{ code, language }`
+  - Returns: Execution results
+
+### Comments
+- `GET /api/comments/:resourceId` - Get comments for resource
+- `POST /api/comments` - Add comment
+- `PUT /api/comments/:id` - Update comment
+- `DELETE /api/comments/:id` - Delete comment
 
 ## Contributing
 
