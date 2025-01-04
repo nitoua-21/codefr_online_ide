@@ -29,6 +29,24 @@ const userSchema = new mongoose.Schema({
     enum: ['standard', 'admin'],
     default: 'standard'
   },
+  points: {
+    type: Number,
+    default: 0
+  },
+  solvedChallenges: [{
+    challenge: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Challenge'
+    },
+    solvedAt: {
+      type: Date,
+      default: Date.now
+    },
+    pointsEarned: {
+      type: Number,
+      required: true
+    }
+  }],
   name: {
     type: String,
     trim: true
@@ -74,12 +92,12 @@ const userSchema = new mongoose.Schema({
   },
   resetPasswordToken: String,
   resetPasswordExpiry: Date,
+  lastLogin: {
+    type: Date
+  },
   createdAt: {
     type: Date,
     default: Date.now
-  },
-  lastLogin: {
-    type: Date
   }
 });
 
@@ -100,6 +118,23 @@ userSchema.pre('save', async function(next) {
 // Method to compare password
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
+};
+
+// Method to add points and record solved challenge
+userSchema.methods.addChallengePoints = async function(challengeId, points) {
+  // Check if challenge already solved
+  const alreadySolved = this.solvedChallenges.some(
+    solved => solved.challenge.toString() === challengeId.toString()
+  );
+
+  if (!alreadySolved) {
+    this.points += points;
+    this.solvedChallenges.push({
+      challenge: challengeId,
+      pointsEarned: points
+    });
+    await this.save();
+  }
 };
 
 // Generate JWT token

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Solution = require('../models/Solution');
 const Challenge = require('../models/Challenge');
+const User = require('../models/User');
 const auth = require('../middleware/auth');
 const { executeCodeFr } = require('../utils/codeRunner');
 
@@ -9,7 +10,7 @@ const { executeCodeFr } = require('../utils/codeRunner');
 router.get('/:id', auth, async (req, res) => {
   try {
     const solution = await Solution.findById(req.params.id)
-      .populate('challenge', 'title difficulty category')
+      .populate('challenge', 'title difficulty category points')
       .populate('user', 'username');
 
     if (!solution) {
@@ -33,7 +34,7 @@ router.get('/:id', auth, async (req, res) => {
       solution
     });
   } catch (error) {
-    res.status(400).json({
+    res.status(500).json({
       success: false,
       error: 'Erreur lors de la récupération de la solution'
     });
@@ -52,8 +53,8 @@ router.get('/challenge/:challengeId', auth, async (req, res) => {
       });
     }
 
-    // Only allow challenge author to view all solutions
-    if (!challenge.author.equals(req.user._id)) {
+    // Verify if user is admin or challenge author
+    if (!challenge.author.equals(req.user._id) && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         error: 'Non autorisé à voir les solutions'
@@ -61,7 +62,7 @@ router.get('/challenge/:challengeId', auth, async (req, res) => {
     }
 
     const solutions = await Solution.find({ challenge: req.params.challengeId })
-      .populate('user', 'username')
+      .populate('user', 'username points')
       .sort('-score');
 
     res.json({
@@ -69,7 +70,7 @@ router.get('/challenge/:challengeId', auth, async (req, res) => {
       solutions
     });
   } catch (error) {
-    res.status(400).json({
+    res.status(500).json({
       success: false,
       error: 'Erreur lors de la récupération des solutions'
     });
@@ -196,11 +197,11 @@ router.post('/challenge/:challengeId', auth, async (req, res) => {
   }
 });
 
-// Update solution status (challenge author only)
-router.put('/:id/status', auth, async (req, res) => {
+// Update solution status (approve/reject)
+router.put('/:solutionId/status', auth, async (req, res) => {
   try {
     const { status } = req.body;
-    
+
     if (!['pending', 'approved', 'rejected'].includes(status)) {
       return res.status(400).json({
         success: false,
@@ -208,7 +209,10 @@ router.put('/:id/status', auth, async (req, res) => {
       });
     }
 
-    const solution = await Solution.findById(req.params.id);
+    const solution = await Solution.findById(req.params.solutionId)
+      .populate('challenge')
+      .populate('user');
+
     if (!solution) {
       return res.status(404).json({
         success: false,
@@ -216,13 +220,36 @@ router.put('/:id/status', auth, async (req, res) => {
       });
     }
 
-    // Check if user is challenge author
-    const challenge = await Challenge.findById(solution.challenge);
-    if (!challenge.author.equals(req.user._id)) {
+    const challenge = await Challenge.findById(solution.challenge._id);
+    
+    // Verify if user is admin or challenge author
+    if (!challenge.author.equals(req.user._id) && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         error: 'Non autorisé à mettre à jour le statut de la solution'
       });
+    }
+
+    // If solution is being approved and wasn't approved before
+    if (status === 'approved' && solution.status !== 'approved') {
+      const user = await User.findById(solution.user._id);
+      
+      // Award points to the user
+      await user.addChallengePoints(challenge._id, challenge.points);
+
+      // Update challenge stats
+      challenge.solvedCount += 1;
+      await challenge.save();
+    }
+    // If solution was approved but is now being un-approved
+    else if (status !== 'approved' && solution.status === 'approved') {
+      const user = await User.findById(solution.user._id);
+      user.points -= challenge.points;
+      await user.save();
+
+      // Update challenge stats
+      challenge.solvedCount = Math.max(0, challenge.solvedCount - 1);
+      await challenge.save();
     }
 
     solution.status = status;
@@ -234,7 +261,7 @@ router.put('/:id/status', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Update solution status error:', error);
-    res.status(400).json({
+    res.status(500).json({
       success: false,
       error: 'Erreur lors de la mise à jour du statut de la solution'
     });
